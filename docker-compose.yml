@@ -1,0 +1,63 @@
+services:
+  frontend:
+    build:
+      context: ./app/frontend
+      args:
+        USER_ID: "${UID:-1000}"
+        GROUP_ID: "${GID:-1000}"
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./app/frontend:/app
+      - frontend_modules:/app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:8000   # use VITE_ prefix so it’s exposed to Vite
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ./app/backend
+      args:
+        DEV: "true"
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    working_dir: /app
+    volumes:
+      - ./app/backend:/app
+    environment:
+      DEBUG: "1"
+      SECRET_KEY: dev-secret
+      ALLOWED_HOSTS: "*"
+      DB_NAME: store_db
+      DB_USER: store_use
+      DB_PASSWORD: storePassword123!
+      DB_HOST: db
+      DB_PORT: "5432"
+      REDIS_URL: redis://redis:6379/1
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: store_db
+      POSTGRES_USER: store_user
+      POSTGRES_PASSWORD: storePassword123!
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  db-data:
+  static-data:
+  frontend_modules:
