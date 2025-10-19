@@ -27,6 +27,7 @@ services:
     working_dir: /app
     volumes:
       - ./app/backend:/app
+      - static-data:/vol/web
     environment:
       DEBUG: "1"
       SECRET_KEY: dev-secret
