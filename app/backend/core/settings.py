@@ -39,9 +39,18 @@ INSTALLED_APPS = [
     "django.contrib.messages", 
     "django.contrib.staticfiles",
     "rest_framework",
+    'rest_framework.authtoken',
     "drf_spectacular",
     "api",
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
+}
+
+SPECTACULAR_SETTINGS = {
+    'COMPONENT_SPLIT_REQUEST': True,
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
