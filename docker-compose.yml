@@ -32,7 +32,7 @@ services:
       SECRET_KEY: dev-secret
       ALLOWED_HOSTS: "*"
       DB_NAME: store_db
-      DB_USER: store_use
+      DB_USER: store_user
       DB_PASSWORD: storePassword123!
       DB_HOST: db
       DB_PORT: "5432"
