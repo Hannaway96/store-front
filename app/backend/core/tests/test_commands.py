@@ -1,5 +1,5 @@
 """
-Test Custom Djano Commands
+Test Custom Django Commands
 """
 
 from unittest.mock import patch
