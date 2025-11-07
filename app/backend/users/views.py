@@ -5,7 +5,7 @@ API Views for Users
 from rest_framework.views import APIView
 from rest_framework import permissions, status
 from rest_framework.response import Response
-from serializers import RegisterSerializer, UserSerializer
+from .serializers import RegisterSerializer, UserSerializer
 
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -25,7 +25,6 @@ class RegisterUserView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             refresh_token = RefreshToken.for_user(user)
-
             return Response(
                 {
                     "user": UserSerializer(user).data,
