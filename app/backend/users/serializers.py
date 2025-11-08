@@ -9,6 +9,7 @@ from rest_framework import serializers
 
 User = get_user_model()
 
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -28,13 +29,24 @@ class RegisterSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
         ]
+        extra_kwargs = {
+            "email": {
+                "validators": []
+            },  # Remove default validators including uniqueness
+        }
 
     def validate_email(self, value):
-        """Validate email format"""
+        """Validate email format and uniqueness"""
         try:
             validate_email(value)
         except DjangoValidationError:
             raise serializers.ValidationError("Enter a valid email address")
+
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                "A user with this email already exists", code="user_exists"
+            )
+
         return value
 
     def validate(self, attrs):
