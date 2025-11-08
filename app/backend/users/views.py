@@ -6,10 +6,28 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+    OpenApiTypes,
+)
 from .serializers import RegisterSerializer, UserSerializer
 
 
+@extend_schema_view(
+    create=extend_schema(
+        request=RegisterSerializer,
+        responses={
+            201: {
+                "user": UserSerializer,
+                "tokens": {"refresh": OpenApiTypes.STR, "access": OpenApiTypes.STR},
+            },
+            400: {},
+            409: {}
+        },
+    )
+)
 class RegisterUserView(APIView):
     """
     Public endpoint (no authentication required)
