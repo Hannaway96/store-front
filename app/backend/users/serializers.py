@@ -16,7 +16,21 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["id", "email", "first_name", "last_name"]
 
 
-class RegisterSerializer(serializers.ModelSerializer):
+class TokenSerializer(serializers.Serializer):
+    """Serializer for Auth Tokens"""
+
+    access = serializers.CharField(help_text="Access Token")
+    refresh = serializers.CharField(help_text="Refresh Token")
+
+
+class RegisterResponseSerializer(serializers.Serializer):
+    """Serializer for Registration Response"""
+
+    user = UserSerializer()
+    tokens = TokenSerializer()
+
+
+class RegisterRequestSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
 

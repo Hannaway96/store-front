@@ -2,32 +2,18 @@
 API Views for Users
 """
 
+from drf_spectacular.utils import OpenApiExample, extend_schema
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from drf_spectacular.utils import (
-    extend_schema,
-    extend_schema_view,
-    OpenApiParameter,
-    OpenApiTypes,
+
+from .serializers import (
+    RegisterRequestSerializer,
+    UserSerializer,
 )
-from .serializers import RegisterSerializer, UserSerializer
 
 
-@extend_schema_view(
-    create=extend_schema(
-        request=RegisterSerializer,
-        responses={
-            201: {
-                "user": UserSerializer,
-                "tokens": {"refresh": OpenApiTypes.STR, "access": OpenApiTypes.STR},
-            },
-            400: {},
-            409: {}
-        },
-    )
-)
 class RegisterUserView(APIView):
     """
     Public endpoint (no authentication required)
@@ -35,11 +21,62 @@ class RegisterUserView(APIView):
 
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=RegisterRequestSerializer,
+        responses={
+            201: UserSerializer,
+            400: None,  # Schema inferred from examples
+            409: None,  # Schema inferred from examples
+        },
+        examples=[
+            OpenApiExample(
+                "Successful Registration",
+                value={
+                    "user": {
+                        "id": 1,
+                        "email": "user@example.com",
+                        "first_name": "John",
+                        "last_name": "Doe",
+                    },
+                    "tokens": {
+                        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+                        "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+                    },
+                },
+                response_only=True,
+                status_codes=["201"],
+            ),
+            OpenApiExample(
+                "Validation Error - Password Mismatch",
+                value={"non_field_errors": ["Passwords Provided don't match"]},
+                response_only=True,
+                status_codes=["400"],
+            ),
+            OpenApiExample(
+                "Validation Error - Invalid Email",
+                value={"email": ["Enter a valid email address"]},
+                response_only=True,
+                status_codes=["400"],
+            ),
+            OpenApiExample(
+                "Validation Error - Password Too Short",
+                value={"password": ["Ensure this field has at least 8 characters."]},
+                response_only=True,
+                status_codes=["400"],
+            ),
+            OpenApiExample(
+                "User Already Exists",
+                value={"email": ["A user with this email already exists"]},
+                response_only=True,
+                status_codes=["409"],
+            ),
+        ],
+    )
     def post(self, request):
         """
         POST - Register a new user
         """
-        serializer = RegisterSerializer(data=request.data)
+        serializer = RegisterRequestSerializer(data=request.data)
         if not serializer.is_valid():
             # Check if the error is due to an existing user
             if "email" in serializer.errors:
@@ -63,3 +100,6 @@ class RegisterUserView(APIView):
                 },
             },
         )
+
+# class UserInfoView():
+#     """Get User info"""
