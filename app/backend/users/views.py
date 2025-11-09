@@ -5,10 +5,10 @@ API Views for Users
 from core.models import Profile
 from core.serializers import ProfileSerializer, UserSerializer
 from django.contrib.auth import get_user_model
-from drf_spectacular.utils import OpenApiExample, extend_schema
-from rest_framework import generics, permissions, status
+from rest_framework import status
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegisterRequestSerializer
@@ -16,69 +16,20 @@ from .serializers import RegisterRequestSerializer
 User = get_user_model()
 
 
-class RegisterUserView(APIView):
+class UserRegisterView(CreateAPIView):
     """
-    Public endpoint (no authentication required)
+    API View for Registering Users
+    POST - users/regsiter
     """
 
-    permission_classes = [permissions.AllowAny]
+    serializer_class = RegisterRequestSerializer
+    permission_classes = [AllowAny]
 
-    @extend_schema(
-        request=RegisterRequestSerializer,
-        responses={
-            201: UserSerializer,
-            400: None,  # Schema inferred from examples
-            409: None,  # Schema inferred from examples
-        },
-        examples=[
-            OpenApiExample(
-                "Successful Registration",
-                value={
-                    "user": {
-                        "id": 1,
-                        "email": "user@example.com",
-                        "first_name": "John",
-                        "last_name": "Doe",
-                    },
-                    "tokens": {
-                        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-                        "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-                    },
-                },
-                response_only=True,
-                status_codes=["201"],
-            ),
-            OpenApiExample(
-                "Validation Error - Password Mismatch",
-                value={"non_field_errors": ["Passwords Provided don't match"]},
-                response_only=True,
-                status_codes=["400"],
-            ),
-            OpenApiExample(
-                "Validation Error - Invalid Email",
-                value={"email": ["Enter a valid email address"]},
-                response_only=True,
-                status_codes=["400"],
-            ),
-            OpenApiExample(
-                "Validation Error - Password Too Short",
-                value={"password": ["Ensure this field has at least 8 characters."]},
-                response_only=True,
-                status_codes=["400"],
-            ),
-            OpenApiExample(
-                "User Already Exists",
-                value={"email": ["A user with this email already exists"]},
-                response_only=True,
-                status_codes=["409"],
-            ),
-        ],
-    )
-    def post(self, request):
+    def create(self, request):
         """
-        POST - Register a new user
+        create function overrides POST logic
         """
-        serializer = RegisterRequestSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             # Check if the error is due to an existing user
             if "email" in serializer.errors:
@@ -103,23 +54,26 @@ class RegisterUserView(APIView):
             },
         )
 
-class UserDetailViewSet(generics.RetrieveUpdateAPIView):
+
+class UserDetailViewSet(RetrieveUpdateAPIView):
     """
     View set for User
-    GET, PATCH, PUT /{user_id}
+    GET, PATCH, PUT users/{user_id}/
     """
+
     lookup_field = "id"
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
 
-class ProfileViewSet(generics.RetrieveUpdateDestroyAPIView):
+class ProfileViewSet(RetrieveUpdateAPIView):
     """
     View Set for Users Profile
-    GET, PATCH, PUT, DELETE
+    GET, PATCH, PUT users/{user_id}/profile/
     """
 
+    lookup_field = "user__id"
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
