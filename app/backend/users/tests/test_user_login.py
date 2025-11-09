@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 
-class Test_User_Login(TestCase):
+class User_Login(TestCase):
     """Test User Login"""
 
     def setUp(self):

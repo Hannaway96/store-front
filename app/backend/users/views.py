@@ -2,16 +2,18 @@
 API Views for Users
 """
 
+from core.models import Profile
+from core.serializers import ProfileSerializer, UserSerializer
+from django.contrib.auth import get_user_model
 from drf_spectacular.utils import OpenApiExample, extend_schema
-from rest_framework import permissions, status
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import (
-    RegisterRequestSerializer,
-    UserSerializer,
-)
+from .serializers import RegisterRequestSerializer
+
+User = get_user_model()
 
 
 class RegisterUserView(APIView):
@@ -101,5 +103,23 @@ class RegisterUserView(APIView):
             },
         )
 
-# class UserInfoView():
-#     """Get User info"""
+class UserDetailViewSet(generics.RetrieveUpdateAPIView):
+    """
+    View set for User
+    GET, PATCH, PUT /{user_id}
+    """
+    lookup_field = "id"
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class ProfileViewSet(generics.RetrieveUpdateDestroyAPIView):
+    """
+    View Set for Users Profile
+    GET, PATCH, PUT, DELETE
+    """
+
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]

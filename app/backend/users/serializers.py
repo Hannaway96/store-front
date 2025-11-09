@@ -7,13 +7,9 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from rest_framework import serializers
 
+from core.serializers import UserSerializer
+
 User = get_user_model()
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "email", "first_name", "last_name"]
 
 
 class TokenSerializer(serializers.Serializer):
