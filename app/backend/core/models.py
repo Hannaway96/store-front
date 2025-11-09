@@ -46,7 +46,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Profile(models.Model):
-    """Users Profile Information"""
+    """User's Profile Information"""
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     date_of_birth = models.DateField()
