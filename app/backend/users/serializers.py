@@ -7,15 +7,26 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from rest_framework import serializers
 
+from core.serializers import UserSerializer
+
 User = get_user_model()
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "email", "first_name", "last_name"]
+
+class TokenSerializer(serializers.Serializer):
+    """Serializer for Auth Tokens"""
+
+    access = serializers.CharField(help_text="Access Token")
+    refresh = serializers.CharField(help_text="Refresh Token")
 
 
-class RegisterSerializer(serializers.ModelSerializer):
+class RegisterResponseSerializer(serializers.Serializer):
+    """Serializer for Registration Response"""
+
+    user = UserSerializer()
+    tokens = TokenSerializer()
+
+
+class RegisterRequestSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
 
@@ -28,13 +39,24 @@ class RegisterSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
         ]
+        extra_kwargs = {
+            "email": {
+                "validators": []
+            },  # Remove default validators including uniqueness
+        }
 
     def validate_email(self, value):
-        """Validate email format"""
+        """Validate email format and uniqueness"""
         try:
             validate_email(value)
         except DjangoValidationError:
             raise serializers.ValidationError("Enter a valid email address")
+
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                "A user with this email already exists", code="user_exists"
+            )
+
         return value
 
     def validate(self, attrs):

@@ -22,8 +22,7 @@ services:
       args:
         DEV: "true"
     command: >
-      sh -c "python manage.py wait_for_db &&
-             python manage.py migrate &&
+      sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
@@ -42,8 +41,10 @@ services:
       DB_PORT: "5432"
       REDIS_URL: redis://redis:6379/1
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   db:
     image: postgres:16-alpine
@@ -55,6 +56,11 @@ services:
       POSTGRES_DB: store_db
       POSTGRES_USER: store_user
       POSTGRES_PASSWORD: storePassword123!
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U store_user -d store_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine

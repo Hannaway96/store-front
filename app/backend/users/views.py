@@ -2,38 +2,78 @@
 API Views for Users
 """
 
-from rest_framework.views import APIView
-from rest_framework import permissions, status
+from core.models import Profile
+from core.serializers import ProfileSerializer, UserSerializer
+from django.contrib.auth import get_user_model
+from rest_framework import status
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from .serializers import RegisterSerializer, UserSerializer
-
-from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenRefreshView
+
+from .serializers import RegisterRequestSerializer
+
+User = get_user_model()
 
 
-class RegisterUserView(APIView):
+class UserRegisterView(CreateAPIView):
     """
-    POST - Register a new user
-    Public endpoint (no authentication required)
+    API View for Registering Users
+    POST - users/regsiter
     """
 
-    permission_classes = [permissions.AllowAny]
+    serializer_class = RegisterRequestSerializer
+    permission_classes = [AllowAny]
 
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            refresh_token = RefreshToken.for_user(user)
-            return Response(
-                {
-                    "user": UserSerializer(user).data,
-                    "tokens": {
-                        "refresh": str(refresh_token),
-                        "access": str(refresh_token.access_token),
-                    },
+    def create(self, request):
+        """
+        create function overrides POST logic
+        """
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            # Check if the error is due to an existing user
+            if "email" in serializer.errors:
+                for error in serializer.errors["email"]:
+                    if hasattr(error, "code") and error.code == "user_exists":
+                        return Response(
+                            status=status.HTTP_409_CONFLICT,
+                            data={"email": ["A user with this email already exists"]},
+                        )
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
+
+        user = serializer.save()
+        refresh_token = RefreshToken.for_user(user)
+        return Response(
+            status=status.HTTP_201_CREATED,
+            data={
+                "user": UserSerializer(user).data,
+                "tokens": {
+                    "refresh": str(refresh_token),
+                    "access": str(refresh_token.access_token),
                 },
-                status=status.HTTP_201_CREATED,
-            )
+            },
+        )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class UserDetailViewSet(RetrieveUpdateAPIView):
+    """
+    View set for User
+    GET, PATCH, PUT users/{user_id}/
+    """
+
+    lookup_field = "id"
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class ProfileViewSet(RetrieveUpdateAPIView):
+    """
+    View Set for Users Profile
+    GET, PATCH, PUT users/{user_id}/profile/
+    """
+
+    lookup_field = "user__id"
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]

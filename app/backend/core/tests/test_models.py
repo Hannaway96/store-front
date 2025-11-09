@@ -15,8 +15,8 @@ def create_user(email="user@example.com", password="testpass123"):
     return get_user_model().objects.create_user(email, password)
 
 
-class ModelTests(TestCase):
-    """Test Models"""
+class User_Model(TestCase):
+    """Test User Model"""
 
     def test_create_user_with_email(self):
         """Test creating a user with an email is success"""
@@ -51,3 +51,10 @@ class ModelTests(TestCase):
         )
         self.assertEqual(user.is_staff, True)
         self.assertEqual(user.is_superuser, True)
+
+
+class Profile_Model(TestCase):
+    """Test Profile Model"""
+
+    # TODO Write Tests for Profile Model
+    pass

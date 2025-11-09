@@ -10,7 +10,7 @@ from django.urls import reverse
 from rest_framework import status
 
 
-class AdminSiteTests(TestCase):
+class Admin_Site(TestCase):
     """Tests for Django Admin"""
 
     def setUp(self):
