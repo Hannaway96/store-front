@@ -2,17 +2,19 @@
 Test Models in the system
 """
 
-from decimal import Decimal
-from unittest.mock import patch
+from datetime import date
 
-from core import models
+from core.models import Profile
 from django.contrib.auth import get_user_model
+from django.db import IntegrityError
 from django.test import TestCase
 
 
 def create_user(email="user@example.com", password="testpass123"):
-    """Create and returna new dummy user"""
-    return get_user_model().objects.create_user(email, password)
+    """Create and return a new dummy user"""
+    return get_user_model().objects.create_user(
+        email=email, password=password, date_of_birth=date(1990, 1, 1)
+    )
 
 
 class User_Model(TestCase):
@@ -22,7 +24,7 @@ class User_Model(TestCase):
         """Test creating a user with an email is success"""
         email = "test@mail.com"
         password = "password123"
-        user = get_user_model().objects.create_user(email=email, password=password)
+        user = create_user(email=email, password=password)
         self.assertEqual(user.email, email)
         self.assertTrue(user.check_password(password))
 
@@ -36,18 +38,20 @@ class User_Model(TestCase):
         ]
 
         for email, expected in emails:
-            user = get_user_model().objects.create_user(email, "sample123")
+            user = create_user(email=email, password="sample123")
             self.assertEqual(user.email, expected)
 
     def test_new_user_without_email_raises_error(self):
         """Test creating a new user without an email raises an error"""
         with self.assertRaises(ValueError):
-            get_user_model().objects.create_user("", "sample123")
+            create_user(email="", password="sample123")
 
     def test_create_super_user(self):
         """Test creating a super user"""
         user = get_user_model().objects.create_superuser(
-            "example@mail.com", "password123"
+            email="example@mail.com",
+            password="password123",
+            date_of_birth=date(1990, 1, 1),
         )
         self.assertEqual(user.is_staff, True)
         self.assertEqual(user.is_superuser, True)
@@ -56,5 +60,10 @@ class User_Model(TestCase):
 class Profile_Model(TestCase):
     """Test Profile Model"""
 
-    # TODO Write Tests for Profile Model
-    pass
+    def test_profile_requires_user(self):
+        """Test a Profile must have an existing User"""
+        with self.assertRaises(IntegrityError):
+            Profile.objects.create(
+                display_name="Test User",
+                bio="Test bio",
+            )

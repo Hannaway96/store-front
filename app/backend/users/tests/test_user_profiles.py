@@ -29,12 +29,12 @@ class Profile_Actions_Unauthenticated(TestCase):
             password="password123",
             first_name="John",
             last_name="Doe",
+            date_of_birth=date(1990, 1, 1),
         )
         self.profile = Profile.objects.create(
             user=self.user,
-            date_of_birth=date(1990, 1, 1),
-            address="1 random street",
-            postcode="BT474BN",
+            display_name="John Doe",
+            bio="Test bio",
         )
         self.profile.save()
 
@@ -46,7 +46,7 @@ class Profile_Actions_Unauthenticated(TestCase):
 
     def test_patch_profile_fail(self):
         """Test updating a profile via PATCH fails when unauthenticated"""
-        request = {"address": "2 another street"}
+        request = {"bio": "Updated bio"}
         url = get_url(self.user.id)
         response = self.client.patch(url, request, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -54,9 +54,8 @@ class Profile_Actions_Unauthenticated(TestCase):
     def test_put_profile_fail(self):
         """Test updating a profile via PUT fails when unauthenticated"""
         request = {
-            "date_of_birth": date(1996, 7, 16),
-            "address": "2 another street",
-            "postcode": "BT488BY",
+            "display_name": "Updated Name",
+            "bio": "Updated bio",
         }
         url = get_url(self.user.id)
         response = self.client.put(url, request, format="json")
@@ -71,6 +70,7 @@ class Profile_Actions_Authenticated(TestCase):
         self.user = get_user_model().objects.create_user(
             email="user_1@mail.com",
             password="password123",
+            date_of_birth=date(1990, 1, 1),
             first_name="John",
             last_name="Doe",
         )
@@ -79,9 +79,8 @@ class Profile_Actions_Authenticated(TestCase):
 
         self.profile = Profile.objects.create(
             user=self.user,
-            date_of_birth=date(1990, 1, 1),
-            address="1 random street",
-            postcode="BT474BN",
+            display_name="John Doe",
+            bio="Test bio",
         )
 
     def get_access_token(self, user):
@@ -97,36 +96,30 @@ class Profile_Actions_Authenticated(TestCase):
 
         serializer = ProfileSerializer(response.data)
         self.assertEqual(serializer.data, response.data)
-        self.assertEqual(serializer.data["address"], self.profile.address)
-        self.assertEqual(serializer.data["postcode"], self.profile.postcode)
-        self.assertEqual(
-            serializer.data["date_of_birth"], str(self.profile.date_of_birth)
-        )
+        self.assertEqual(serializer.data["display_name"], self.profile.display_name)
+        self.assertEqual(serializer.data["bio"], self.profile.bio)
 
     def test_patch_profile(self):
         """Test updating a profile via PATCH"""
-        request = {"address": "2 another street"}
+        request = {"bio": "Updated bio"}
         url = get_url(self.user.id)
         response = self.client.patch(url, request, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         serializer = ProfileSerializer(response.data)
         self.assertEqual(serializer.data, response.data)
-        self.assertNotEqual(serializer.data["address"], self.profile.address)
+        self.assertNotEqual(serializer.data["bio"], self.profile.bio)
 
         self.profile.refresh_from_db()
-        self.assertEqual(serializer.data["address"], self.profile.address)
-        self.assertEqual(serializer.data["postcode"], self.profile.postcode)
-        self.assertEqual(
-            serializer.data["date_of_birth"], str(self.profile.date_of_birth)
-        )
+        self.assertEqual(serializer.data["bio"], self.profile.bio)
+        self.assertEqual(serializer.data["display_name"], self.profile.display_name)
 
     def test_put_profile(self):
         """Test updating a profile via PUT"""
         request = {
-            "date_of_birth": date(1996, 7, 16),
-            "address": "2 another street",
-            "postcode": "BT488BY",
+            "display_name": "Jane Doe",
+            "bio": "Updated bio",
+            "location": "New York",
         }
         url = get_url(self.user.id)
         response = self.client.put(url, request, format="json")
@@ -134,15 +127,9 @@ class Profile_Actions_Authenticated(TestCase):
 
         serializer = ProfileSerializer(response.data)
         self.assertEqual(serializer.data, response.data)
-        self.assertNotEqual(serializer.data["address"], self.profile.address)
-        self.assertNotEqual(serializer.data["postcode"], self.profile.postcode)
-        self.assertNotEqual(
-            serializer.data["date_of_birth"], str(self.profile.date_of_birth)
-        )
+        self.assertNotEqual(serializer.data["display_name"], self.profile.display_name)
+        self.assertNotEqual(serializer.data["bio"], self.profile.bio)
 
         self.profile.refresh_from_db()
-        self.assertEqual(serializer.data["address"], self.profile.address)
-        self.assertEqual(serializer.data["postcode"], self.profile.postcode)
-        self.assertEqual(
-            serializer.data["date_of_birth"], str(self.profile.date_of_birth)
-        )
+        self.assertEqual(serializer.data["display_name"], self.profile.display_name)
+        self.assertEqual(serializer.data["bio"], self.profile.bio)

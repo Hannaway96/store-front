@@ -1,7 +1,7 @@
 """
 Test User Actions
 """
-
+from datetime import date
 from core.serializers import UserSerializer
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -24,6 +24,7 @@ class User_Actions_Unauthenticated(TestCase):
         self.user = get_user_model().objects.create_user(
             email="user_1@mail.com",
             password="password123",
+            date_of_birth=date(1990, 1, 1),
             first_name="John",
             last_name="Doe",
         )
@@ -61,6 +62,7 @@ class User_Actions_Authenticated(TestCase):
         self.user = get_user_model().objects.create_user(
             email="user_1@mail.com",
             password="password123",
+            date_of_birth=date(1990, 1, 1),
             first_name="John",
             last_name="Doe",
         )
@@ -101,6 +103,7 @@ class User_Actions_Authenticated(TestCase):
             "email": "user_1@mail.com",
             "first_name": "Jenny",
             "last_name": "Dane",
+            "date_of_birth": date(1990, 1, 1),
         }
         url = get_url(self.user.id)
         response = self.client.put(url, request, format="json")

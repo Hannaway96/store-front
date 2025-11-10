@@ -2,7 +2,7 @@
 Test User Refresh Tokens
 """
 
-from datetime import timedelta
+from datetime import timedelta, date
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -22,6 +22,7 @@ class User_Refresh_Tokens(TestCase):
         self.valid_user = get_user_model().objects.create_user(
             email="valid@mail.com",
             password="password123",
+            date_of_birth=date(1990, 1, 1),
             first_name="John",
             last_name="Doe",
         )
