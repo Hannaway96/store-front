@@ -1,7 +1,7 @@
 """
 Tests for the Django Admin Dashboard
 """
-
+from datetime import date
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.test import Client as HttpTestClient
@@ -17,11 +17,15 @@ class Admin_Site(TestCase):
         """Create user and client"""
         self.client = HttpTestClient()
         self.admin_user = get_user_model().objects.create_superuser(
-            email="admin@example.com", password="password123"
+            email="admin@example.com", 
+            password="password123",
+            date_of_birth=date(1990, 1, 1),
         )
         self.client.force_login(self.admin_user)
         self.basic_user = get_user_model().objects.create_user(
-            email="basic@example.com", password="password123"
+            email="basic@example.com", 
+            password="password123",
+            date_of_birth=date(1990, 1, 1),
         )
 
     def test_user_list(self):

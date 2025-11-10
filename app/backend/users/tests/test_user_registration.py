@@ -2,9 +2,12 @@
 Test User Registration
 """
 
+from datetime import date
+
+from core.models import Profile
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -24,6 +27,7 @@ class User_Registration(TestCase):
             "password_confirm": "password123",
             "first_name": "John",
             "last_name": "Doe",
+            "date_of_birth": date(1990, 1, 1),
         }
 
     def test_registration_success_with_tokens(self):
@@ -44,6 +48,23 @@ class User_Registration(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(get_user_model().objects.all().count(), 1)
+
+    def test_registration_success_with_user_profile_in_db(self):
+        """Test to verify a user and their profile is added to the database when registered"""
+        request = self.create_valid_request()
+        response = self.client.post(self.url, request, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(get_user_model().objects.all().count(), 1)
+
+        created_user = response.data["user"]
+        query_results = Profile.objects.all().filter(user__id=created_user["id"])
+        self.assertEqual(query_results.count(), 1)
+
+        profile = query_results.first()
+        self.assertEqual(profile.user.id, created_user["id"])
+        self.assertEqual(profile.user.email, created_user["email"])
+        self.assertEqual(profile.user.date_of_birth, request["date_of_birth"])
 
     def test_invalid_email(self):
         """Test to verify a user is rejected if their email is invalid"""
@@ -70,6 +91,7 @@ class User_Registration(TestCase):
         get_user_model().objects.create_user(
             email="valid@mail.com",
             password="password123",
+            date_of_birth=date(1990, 1, 1),
             first_name="John",
             last_name="Doe",
         )
@@ -77,3 +99,11 @@ class User_Registration(TestCase):
         response = self.client.post(self.url, request, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def test_user_not_old_enough(self):
+        """Test a registration is rejected if the user is below 18"""
+        request = self.create_valid_request()
+        request["date_of_birth"] = date.today()
+        response = self.client.post(self.url, request, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

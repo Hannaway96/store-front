@@ -1,7 +1,7 @@
 """
 Test User Login
 """
-
+from datetime import date
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -26,6 +26,7 @@ class User_Login(TestCase):
         self.create_user(
             email="user@mail.com",
             password="password123",
+            date_of_birth=date(1990, 1, 1),
             first_name="John",
             last_name="Doe",
         )
@@ -49,6 +50,7 @@ class User_Login(TestCase):
         user = self.create_user(
             email="user@mail.com",
             password="password123",
+            date_of_birth=date(1990, 1, 1),
             first_name="John",
             last_name="Doe",
         )

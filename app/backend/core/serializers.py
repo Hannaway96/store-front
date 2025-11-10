@@ -15,7 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name"]
+        fields = ["id", "email", "first_name", "last_name", "date_of_birth"]
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -24,9 +24,6 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = [
-            "date_of_birth",
-            "address",
-            "postcode",
             "display_name",
             "bio",
             "location",

@@ -2,11 +2,13 @@
 Custom Serializers for User Authentication views
 """
 
+from datetime import date
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from rest_framework import serializers
 
+from core.models import Profile
 from core.serializers import UserSerializer
 
 User = get_user_model()
@@ -38,6 +40,7 @@ class RegisterRequestSerializer(serializers.ModelSerializer):
             "password_confirm",
             "first_name",
             "last_name",
+            "date_of_birth",
         ]
         extra_kwargs = {
             "email": {
@@ -56,7 +59,20 @@ class RegisterRequestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "A user with this email already exists", code="user_exists"
             )
+        return value
 
+    def validate_date_of_birth(self, value):
+        """Validate dob"""
+        today = date.today()
+        age = (
+            today.year
+            - value.year
+            - ((today.month, today.day) < (value.month, value.day))
+        )
+        if age < 18:
+            raise serializers.ValidationError(
+                "User must be 18 or older", code="dob_error"
+            )
         return value
 
     def validate(self, attrs):
@@ -71,5 +87,7 @@ class RegisterRequestSerializer(serializers.ModelSerializer):
             password=validated_data["password"],
             first_name=validated_data.get("first_name", ""),
             last_name=validated_data.get("last_name", ""),
+            date_of_birth=validated_data.get("date_of_birth"),
         )
+        Profile.objects.create(user=user)
         return user
