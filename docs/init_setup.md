@@ -176,10 +176,10 @@ docker compose build frontend
 
 ### Backend Development
 
-1. Create venv and install python dependencies
+1. Create virtual environment and install python dependencies. The shell script in `scripts/` will handle both.
    ```bash
    cd scripts
-   bash create_venv.sh # Will do both creation env and installing deps
+   bash create_venv.sh
    ```   
 2. Make changes to Python files in `app/backend/`
 3. Changes are automatically reflected (volume mounting)
