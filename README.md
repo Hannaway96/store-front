@@ -140,7 +140,12 @@ docker compose logs -f frontend
 
 ## API Documentation
 
-API documentation is automatically generated using DRF Spectacular. Check the Django URLs configuration for the endpoint.
+API documentation is automatically generated using DRF Spectacular.
+Endpoint is reachable after runner the api through docker
+```bash
+docker compose up -d
+```
+Navigate to localhost:8000/docs on a web browser to view the interactive api docs.
 
 ## Contributing
 
