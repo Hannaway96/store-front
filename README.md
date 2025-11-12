@@ -145,7 +145,7 @@ Endpoint is reachable after runner the api through docker
 ```bash
 docker compose up -d
 ```
-Navigate to localhost:8000/docs on a web browser to view the interactive api docs.
+To view the interactive docs, navigate to <http://localhost:8000/docs>
 
 ## Contributing
 
