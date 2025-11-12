@@ -176,11 +176,16 @@ docker compose build frontend
 
 ### Backend Development
 
-1. Make changes to Python files in `app/backend/`
-2. Changes are automatically reflected (volume mounting)
-3. For new dependencies, add them to `requirements.txt` or `requirements.dev.txt`
-4. Rebuild the container: `docker compose build api`
-5. Restart: `docker compose restart api`
+1. Create venv and install python dependencies
+   ```bash
+      cd scripts
+      bash create_venv.sh # Will do both creation env and installing deps
+   ```   
+2. Make changes to Python files in `app/backend/`
+3. Changes are automatically reflected (volume mounting)
+4. For new dependencies, add them to `requirements.txt` or `requirements.dev.txt`
+5. Rebuild the container: `docker compose build api`
+6. Restart: `docker compose restart api`
 
 ### Frontend Development
 
