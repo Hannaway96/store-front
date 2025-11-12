@@ -3,6 +3,7 @@ API Views for Users
 """
 
 from core.models import Profile
+from core.permissions import isOwnerOrReadOnly, isOwner
 from core.serializers import ProfileSerializer, UserSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -11,7 +12,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import RegisterRequestSerializer
+from .serializers import RegisterRequestSerializer, RegisterResponseSerializer
 
 User = get_user_model()
 
@@ -42,17 +43,17 @@ class UserRegisterView(CreateAPIView):
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
         user = serializer.save()
-        refresh_token = RefreshToken.for_user(user)
-        return Response(
-            status=status.HTTP_201_CREATED,
-            data={
-                "user": UserSerializer(user).data,
+        token = RefreshToken.for_user(user)
+        res = RegisterResponseSerializer(
+            {
+                "user": user,
                 "tokens": {
-                    "refresh": str(refresh_token),
-                    "access": str(refresh_token.access_token),
+                    "refresh": str(token),
+                    "access": str(token.access_token),
                 },
-            },
+            }
         )
+        return Response(status=status.HTTP_201_CREATED, data=res.data)
 
 
 class UserDetailViewSet(RetrieveUpdateAPIView):
@@ -64,7 +65,7 @@ class UserDetailViewSet(RetrieveUpdateAPIView):
     lookup_field = "id"
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, isOwner]
 
 
 class ProfileViewSet(RetrieveUpdateAPIView):
@@ -76,4 +77,4 @@ class ProfileViewSet(RetrieveUpdateAPIView):
     lookup_field = "user__id"
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, isOwnerOrReadOnly]
