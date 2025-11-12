@@ -84,7 +84,9 @@ store-front/
 │       └── package.json
 ├── docs/                 # Documentation
 ├── docker-compose.yml    # Multi-container orchestration
-└── README.md
+├── README.md
+└── scripts/              # Bash scripts
+    └── create_venv.sh    # Set up local python virtual env for LSP syntax highlighting
 ```
 
 ## Development
