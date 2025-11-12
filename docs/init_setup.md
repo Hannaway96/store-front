@@ -275,9 +275,7 @@ After setup is complete:
 
 - [Docker Documentation](https://docs.docker.com/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
-
 - [Django Documentation](https://docs.djangoproject.com/)
-- [Django Rest Framework](https://www.django-rest-framework.org/)
-
+- [Django Rest Framework Documentation](https://www.django-rest-framework.org/)
 - [Vite Documentation](https://vitejs.dev/)
 - [React Documentation](https://react.dev/)
