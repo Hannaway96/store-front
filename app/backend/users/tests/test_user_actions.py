@@ -1,14 +1,15 @@
 """
 Test User Actions
 """
+
 from datetime import date
+
+from core.helpers import API_Client
 from core.serializers import UserSerializer
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
 def get_url(user_id):
@@ -20,7 +21,7 @@ class User_Actions_Unauthenticated(TestCase):
     """Test Actions while Unauthenticated"""
 
     def setUp(self):
-        self.client = APIClient()
+        self.client = API_Client()
         self.user = get_user_model().objects.create_user(
             email="user_1@mail.com",
             password="password123",
@@ -58,7 +59,7 @@ class User_Actions_Authenticated(TestCase):
     """Test User Actions while Authenticated"""
 
     def setUp(self):
-        self.client = APIClient()
+        self.client = API_Client()
         self.user = get_user_model().objects.create_user(
             email="user_1@mail.com",
             password="password123",
@@ -66,13 +67,14 @@ class User_Actions_Authenticated(TestCase):
             first_name="John",
             last_name="Doe",
         )
-        token = self.get_access_token(self.user)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-
-    def get_access_token(self, user):
-        """Helper function to get auth tokens for user"""
-        refresh = RefreshToken.for_user(user)
-        return str(refresh.access_token)
+        self.other_user = get_user_model().objects.create_user(
+            email="user_2@mail.com",
+            password="password123",
+            date_of_birth=date(1990, 1, 1),
+            first_name="Jane",
+            last_name="Doe",
+        )
+        self.client.authorize(self.user)
 
     def test_get_user(self):
         """Test an existing is returned by ID"""
@@ -121,3 +123,30 @@ class User_Actions_Authenticated(TestCase):
         self.assertEqual(serializer.data["email"], self.user.email)
         self.assertEqual(serializer.data["first_name"], self.user.first_name)
         self.assertEqual(serializer.data["last_name"], self.user.last_name)
+
+    def test_user_can_only_get_themself(self):
+        """Test only owner of a user can GET"""
+        url = get_url(self.other_user.id)
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_user_can_only_patch_themself(self):
+        """Test only owner can update user via PUT"""
+        request = {
+            "email": "user@mail.com",
+        }
+        url = get_url(self.other_user.id)
+        response = self.client.patch(url, request, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_user_can_only_put_themself(self):
+        """Test only owner can update user via PUT"""
+        request = {
+            "email": "user@mail.com",
+            "first_name": "Jenny",
+            "last_name": "Dane",
+            "date_of_birth": date(1990, 1, 1),
+        }
+        url = get_url(self.other_user.id)
+        response = self.client.put(url, request, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

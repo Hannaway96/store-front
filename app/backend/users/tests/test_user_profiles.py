@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIClient
+from core.helpers import API_Client
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
@@ -23,7 +23,7 @@ class Profile_Actions_Unauthenticated(TestCase):
     """Test Actions while Unauthenticated"""
 
     def setUp(self):
-        self.client = APIClient()
+        self.client = API_Client()
         self.user = get_user_model().objects.create_user(
             email="user_1@mail.com",
             password="password123",
@@ -66,7 +66,7 @@ class Profile_Actions_Authenticated(TestCase):
     """Test Actions while Authenticated"""
 
     def setUp(self):
-        self.client = APIClient()
+        self.client = API_Client()
         self.user = get_user_model().objects.create_user(
             email="user_1@mail.com",
             password="password123",
@@ -74,14 +74,25 @@ class Profile_Actions_Authenticated(TestCase):
             first_name="John",
             last_name="Doe",
         )
-        token = self.get_access_token(self.user)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-
+        self.other_user = get_user_model().objects.create_user(
+            email="user_2@mail.com",
+            password="password123",
+            date_of_birth=date(1990, 1, 1),
+            first_name="Jane",
+            last_name="Doe",
+        )
+        
         self.profile = Profile.objects.create(
             user=self.user,
             display_name="John Doe",
             bio="Test bio",
         )
+        self.other_profile = Profile.objects.create(
+            user=self.other_user,
+            display_name="Jane Doe",
+            bio="Test bio",
+        )
+        self.client.authorize(self.user)
 
     def get_access_token(self, user):
         """Helper function to get auth tokens for user"""
@@ -133,3 +144,28 @@ class Profile_Actions_Authenticated(TestCase):
         self.profile.refresh_from_db()
         self.assertEqual(serializer.data["display_name"], self.profile.display_name)
         self.assertEqual(serializer.data["bio"], self.profile.bio)
+
+    def test_any_user_can_get_profile(self):
+        """Test any user can get another profile via GET"""
+        url = get_url(self.other_user.id)
+        response = self.client.get(url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_only_user_can_patch_profile(self):
+        """Test only owner of profile can update via PATCH"""
+        request = {"bio": "Updated bio"}
+        url = get_url(self.other_user.id)
+        response = self.client.patch(url, request, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_only_user_can_put_profile(self):
+        """Test only owner of profile can update via PUT"""
+        request = {
+            "display_name": "Jane Doe",
+            "bio": "Updated bio",
+            "location": "New York",
+        }
+        url = get_url(self.other_user.id)
+        response = self.client.put(url, request, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
