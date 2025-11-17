@@ -7,7 +7,7 @@
     - [x] Use JWT Authentication
     - [ ] Set Password Encoding when registering
 - [x] Create basic user & profile actions
-- [ ] UV Package Manager for Python packages??
+- [x] UV Package Manager for Python packages??
 - [ ] Add Git Automation
     - [ ] Add Test Coverage
 - [ ] Product Management

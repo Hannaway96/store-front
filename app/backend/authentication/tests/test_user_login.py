@@ -1,10 +1,12 @@
 """
 Test User Login
 """
+
 from datetime import date
+
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -59,4 +61,3 @@ class User_Login(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertFalse(get_user_model().check_password(user, request["password"]))
-

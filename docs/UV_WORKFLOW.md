@@ -52,17 +52,15 @@ bash create_venv.sh
 **Option 2: Manual setup**
 ```bash
 cd app/backend
-uv venv                    # Create virtual environment
+uv venv                    # Create virtual environment in app/backend/.venv
 source .venv/bin/activate  # Activate it (Linux/Mac)
 # or
 .venv\Scripts\activate     # Windows
 
-# --no-install-project: Don't install the project itself (Django app, not a package)
-# --active: Use the currently active virtual environment (if venv is not in current dir)
-uv sync --extra dev --no-install-project --active  # Install all dependencies including dev
+uv sync --extra dev        # Install all dependencies including dev
 ```
 
-**Note**: If your virtual environment is in a different directory than `pyproject.toml`, use the `--active` flag to tell UV to use the currently active virtual environment (via `VIRTUAL_ENV`).
+**Note**: Since `pyproject.toml` doesn't have a `[build-system]` section (Django apps aren't packages), UV won't try to install the project itself. The venv should be in the same directory as `pyproject.toml` for the best experience.
 
 ### Installing Dependencies
 
@@ -139,10 +137,10 @@ pip install --upgrade -r requirements.txt
 
 **New way (UV):**
 ```bash
-uv sync --upgrade --no-install-project
+uv sync --upgrade
 ```
 
-**Note**: For Django projects, always include `--no-install-project` to avoid trying to install the project as a package.
+**Note**: Since `pyproject.toml` doesn't have a `[build-system]` section, UV won't try to install the project itself.
 
 This updates all packages to their latest compatible versions (respecting version constraints in `pyproject.toml`).
 
@@ -197,13 +195,11 @@ source .venv/bin/activate  # Linux/Mac
 #### Install Dependencies in Virtual Environment
 
 ```bash
-uv sync --no-install-project                    # Install production dependencies
-uv sync --extra dev --no-install-project        # Install with dev dependencies
+uv sync                    # Install production dependencies
+uv sync --extra dev        # Install with dev dependencies
 ```
 
-**Note**: 
-- For Django projects, always use `--no-install-project` since Django apps aren't meant to be installed as packages.
-- If your virtual environment is not in the same directory as `pyproject.toml`, add `--active` to use the currently active venv: `uv sync --extra dev --no-install-project --active`
+**Note**: Since `pyproject.toml` doesn't have a `[build-system]` section, UV won't try to install the project itself. Keep your `.venv` in the same directory as `pyproject.toml` for the best experience.
 
 #### Run Commands in Virtual Environment (Without Activating)
 
@@ -268,8 +264,8 @@ This is what Docker uses for production builds.
 | Task | Old | New (UV) |
 |------|-----|----------|
 | Create venv | `python -m venv .venv` | `uv venv` |
-| Install deps | `pip install -r req.txt` | `uv sync --no-install-project` |
-| Install with dev | `pip install -r req-dev.txt` | `uv sync --extra dev --no-install-project` |
+| Install deps | `pip install -r req.txt` | `uv sync` |
+| Install with dev | `pip install -r req-dev.txt` | `uv sync --extra dev` |
 | Run command | `python script.py` | `uv run script.py` |
 
 ### Lock File Management
@@ -278,7 +274,7 @@ This is what Docker uses for production builds.
 |------|---------|
 | Generate lock | `uv lock` |
 | Update lock | `uv lock --upgrade` |
-| Install from lock | `uv sync --frozen --no-install-project` |
+| Install from lock | `uv sync --frozen` |
 
 ## Workflow Examples
 
@@ -287,7 +283,7 @@ This is what Docker uses for production builds.
 ```bash
 # 1. Ensure you're up to date
 cd app/backend
-uv sync --upgrade --no-install-project
+uv sync --upgrade
 
 # 2. Add any new dependencies you need
 uv add new-package-name
@@ -314,7 +310,7 @@ git commit -m "Add new feature with dependencies"
 
 ```bash
 # 1. Update all dependencies to latest compatible versions
-uv sync --upgrade --no-install-project
+uv sync --upgrade
 
 # 2. Test your application
 uv run pytest
@@ -348,7 +344,7 @@ uv run ruff check .
 
 2. **Commit `uv.lock`** - Essential for reproducible builds
 
-3. **Use `uv sync --no-install-project` instead of `uv pip install`** - It's faster and respects your lock file (use `--no-install-project` for Django apps)
+3. **Use `uv sync` instead of `uv pip install`** - It's faster and respects your lock file. Since `pyproject.toml` doesn't have a `[build-system]` section, UV won't try to install the project itself.
 
 4. **Use `uv run` for one-off commands** - No need to activate the venv
 
@@ -356,7 +352,7 @@ uv run ruff check .
 
 6. **Use `--frozen` in CI/CD** - Ensures exact same versions as your lock file
 
-7. **Update dependencies regularly** - Run `uv sync --upgrade --no-install-project` weekly/monthly
+7. **Update dependencies regularly** - Run `uv sync --upgrade` weekly/monthly
 
 ## Troubleshooting
 
@@ -383,7 +379,7 @@ uv cache clean
 ```bash
 rm -rf .venv uv.lock
 uv venv
-uv sync --extra dev --no-install-project
+uv sync --extra dev
 uv lock
 ```
 

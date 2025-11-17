@@ -1,7 +1,8 @@
-from authentication import urls as auth_urls
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+from authentication import urls as auth_urls
 from users import urls as user_urls
 
 urlpatterns = [

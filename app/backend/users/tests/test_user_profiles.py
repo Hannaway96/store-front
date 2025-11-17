@@ -4,13 +4,14 @@ Test Profile Actions
 
 from datetime import date
 
-from core.models import Profile
-from core.serializers import ProfileSerializer
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
+
 from core.helpers import API_Client
+from core.models import Profile
+from core.serializers import ProfileSerializer
 
 
 def get_url(user_id):
@@ -162,4 +163,3 @@ class Profile_Actions_Authenticated(TestCase):
         url = get_url(self.other_user.id)
         response = self.client.put(url, request, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-

@@ -2,7 +2,7 @@
 Test User Refresh Tokens
 """
 
-from datetime import timedelta, date
+from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase

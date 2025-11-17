@@ -4,17 +4,16 @@ Test Models in the system
 
 from datetime import date
 
-from core.models import Profile
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.test import TestCase
 
+from core.models import Profile
+
 
 def create_user(email="user@example.com", password="testpass123"):
     """Create and return a new dummy user"""
-    return get_user_model().objects.create_user(
-        email=email, password=password, date_of_birth=date(1990, 1, 1)
-    )
+    return get_user_model().objects.create_user(email=email, password=password, date_of_birth=date(1990, 1, 1))
 
 
 class User_Model(TestCase):

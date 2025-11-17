@@ -4,12 +4,13 @@ Test User Actions
 
 from datetime import date
 
-from core.helpers import API_Client
-from core.serializers import UserSerializer
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
+
+from core.helpers import API_Client
+from core.serializers import UserSerializer
 
 
 def get_url(user_id):
