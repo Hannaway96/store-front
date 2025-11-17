@@ -14,7 +14,7 @@ from .serializers import RegisterRequestSerializer, RegisterResponseSerializer
 class RegistrationView(CreateAPIView):
     """
     API View for Registering new Users
-    POST - /regsiter
+    POST - auth/regsiter
     """
 
     serializer_class = RegisterRequestSerializer
