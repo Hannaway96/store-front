@@ -20,11 +20,89 @@ dev = [
     "pytest-django==4.9.0",
     "pytest-sugar==1.0.0",
     "pytest-cov==6.0.0",
+    "ruff>=0.14.5",
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[tool.ruff]
+line-length = 120
+indent-width = 4
+target-version = "py313"
+
+exclude = [
+    # Version control
+    ".bzr",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".svn",
+    # Python cache and compiled files
+    "__pycache__",
+    "*.pyc",
+    "*.pyo",
+    "*.pyd",
+    ".Python",
+    # Virtual environments
+    ".venv",
+    "venv",
+    "ENV",
+    "env",
+    # Build and distribution
+    ".eggs",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "*.egg-info",
+    "*.egg",
+    # Testing and coverage
+    ".coverage",
+    ".coverage.*",
+    ".pytest_cache",
+    ".hypothesis",
+    "htmlcov",
+    ".tox",
+    ".nox",
+    # IDE and editor files
+    ".vscode",
+    ".idea",
+    "*.swp",
+    "*.swo",
+    "*~",
+    # Type checking and linting
+    ".mypy_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".pylint_cache",
+    # Django-specific
+    "*/migrations/*",
+    "*/migrations/",
+    # Other
+    ".direnv",
+    ".pants.d",
+    "node_modules",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "app.settings"
@@ -37,4 +115,41 @@ addopts = [
     "--strict-markers",
     "--tb=short",
     "--reuse-db",
+    "--cov=.",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-branch",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+    "*/manage.py",
+    "*/settings.py",
+    "*/wsgi.py",
+    "*/asgi.py",
+    "*/urls.py",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "@property",
+    "@abstractproperty",
 ]

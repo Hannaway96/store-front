@@ -5,39 +5,40 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0004_alter_profile_user'),
+        ("core", "0004_alter_profile_user"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='profile',
-            name='address',
+            model_name="profile",
+            name="address",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='date_of_birth',
+            model_name="profile",
+            name="date_of_birth",
         ),
         migrations.RemoveField(
-            model_name='profile',
-            name='postcode',
+            model_name="profile",
+            name="postcode",
         ),
         migrations.AddField(
-            model_name='user',
-            name='created_at',
-            field=models.DateTimeField(auto_now_add=True, default=django.utils.timezone.now),
+            model_name="user",
+            name="created_at",
+            field=models.DateTimeField(
+                auto_now_add=True, default=django.utils.timezone.now
+            ),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='user',
-            name='date_of_birth',
+            model_name="user",
+            name="date_of_birth",
             field=models.DateField(default=django.utils.timezone.now),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='user',
-            name='updated_at',
+            model_name="user",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True),
         ),
     ]

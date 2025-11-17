@@ -2,12 +2,13 @@
 Custom Serializers for Authentication views
 """
 
-from core.models import Profile
-from core.serializers import UserSerializer
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from rest_framework import serializers
+
+from core.models import Profile
+from core.serializers import UserSerializer
 
 User = get_user_model()
 
@@ -41,16 +42,12 @@ class RegisterRequestSerializer(serializers.ModelSerializer):
             "date_of_birth",
         ]
         extra_kwargs = {
-            "email": {
-                "validators": []
-            },  # Remove default validators including uniqueness
+            "email": {"validators": []},  # Remove default validators including uniqueness
         }
 
     def too_young(self, date) -> bool:
         today = date.today()
-        age = (
-            today.year - date.year - ((today.month, today.day) < (date.month, date.day))
-        )
+        age = today.year - date.year - ((today.month, today.day) < (date.month, date.day))
         return age < 18
 
     def validate_email(self, value):
@@ -58,12 +55,10 @@ class RegisterRequestSerializer(serializers.ModelSerializer):
         try:
             validate_email(value)
         except DjangoValidationError:
-            raise serializers.ValidationError("Enter a valid email address")
+            raise serializers.ValidationError("Enter a valid email address") from None
 
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError(
-                "A user with this email already exists", code="user_exists"
-            )
+            raise serializers.ValidationError("A user with this email already exists", code="user_exists")
         return value
 
     def validate(self, attrs):
@@ -71,9 +66,7 @@ class RegisterRequestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Passwords Provided don't match")
 
         if attrs["date_of_birth"] and self.too_young(attrs["date_of_birth"]):
-            raise serializers.ValidationError(
-                "User must be 18 or older", code="dob_error"
-            )
+            raise serializers.ValidationError("User must be 18 or older", code="dob_error")
 
         return attrs
 

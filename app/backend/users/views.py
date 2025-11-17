@@ -2,12 +2,13 @@
 API Views for Users
 """
 
-from core.models import Profile
-from core.permissions import UserIsOwner, UserIsOwnerOrReadOnly
-from core.serializers import ProfileSerializer, UserSerializer
 from django.contrib.auth import get_user_model
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import IsAuthenticated
+
+from core.models import Profile
+from core.permissions import UserIsOwner, UserIsOwnerOrReadOnly
+from core.serializers import ProfileSerializer, UserSerializer
 
 User = get_user_model()
 
