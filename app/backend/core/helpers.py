@@ -7,13 +7,13 @@ class API_Client(APIClient):
     def __init__(self):
         super().__init__()
 
-    def get_access_token(self, user):
-        """Helper function to get auth tokens for user"""
+    def create_access_token(self, user):
+        """Create a set of Auth Tokens for user"""
         refresh = RefreshToken.for_user(user)
         return str(refresh.access_token)
     
     def authorize(self, user):
-        """Helper function to assign different creds to the API requests"""
-        token = self.get_access_token(user)
+        """Sign all test requests for an authenticated user"""
+        token = self.create_access_token(user)
         self.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 

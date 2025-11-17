@@ -1,7 +1,7 @@
 from rest_framework.permissions import BasePermission
 
 
-class isOwner(BasePermission):
+class UserIsOwner(BasePermission):
     """
     Custom Permission to only allow object access to user
     """
@@ -17,7 +17,7 @@ class isOwner(BasePermission):
         return False
 
 
-class isReadOnly(BasePermission):
+class ReadOnly(BasePermission):
     """
     Custom Permission to allow read access to all
     """
@@ -28,7 +28,7 @@ class isReadOnly(BasePermission):
             return True
 
 
-class isOwnerOrReadOnly(isReadOnly, isOwner):
+class UserIsOwnerOrReadOnly(ReadOnly, UserIsOwner):
     """
     Custom Permission combining isOwner and isReadOnly
     """
@@ -37,4 +37,4 @@ class isOwnerOrReadOnly(isReadOnly, isOwner):
         """Read permission allowed to all Users"""
         if super().has_object_permission(request, view, obj):
             return True
-        return isOwner.has_object_permission(self, request, view, obj)
+        return UserIsOwner.has_object_permission(self, request, view, obj)
