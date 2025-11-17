@@ -2,7 +2,8 @@ FROM python:3.13-slim AS base
 LABEL maintainers="Jack Hannaway & Daniel O Doherty"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    COVERAGE_FILE=/tmp/.coverage
 
 ARG DEV=true
 
@@ -37,12 +38,16 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/* /root/.cache /tmp/*; \
     # Create user and directories
     useradd --create-home --shell /usr/sbin/nologin --uid 1000 django-user; \
-    mkdir -p /vol/web/media /vol/web/static; \
+    mkdir -p /vol/web/media /vol/web/static /tmp; \
     chown -R django-user:django-user /vol /app /opt/venv; \
-    chmod -R 755 /vol
+    chmod -R 755 /vol; \
+    chmod 1777 /tmp
 
 # Copy Source code
 COPY --chown=django-user:django-user . /app/
+
+# Ensure /app is writable for coverage files
+RUN chmod -R u+w /app
 
 USER django-user
 

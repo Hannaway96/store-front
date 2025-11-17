@@ -109,6 +109,7 @@ DJANGO_SETTINGS_MODULE = "app.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+cache_dir = "/tmp/.pytest_cache"
 addopts = [
     "--verbose",
     "--color=yes",
@@ -117,12 +118,15 @@ addopts = [
     "--reuse-db",
     "--cov=.",
     "--cov-report=term-missing",
-    "--cov-report=html",
+    "--cov-report=html:/tmp/htmlcov",
     "--cov-branch",
+    "--no-cov-on-fail",
 ]
 
 [tool.coverage.run]
 source = ["."]
+data_file = "/tmp/.coverage"
+parallel = false
 omit = [
     "*/migrations/*",
     "*/tests/*",
