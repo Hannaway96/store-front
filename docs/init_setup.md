@@ -101,7 +101,7 @@ Once all containers are running, you can access:
   - Database connection waiting (ensures DB is ready)
   - Development server with hot reload
   - Static/media files stored in `/vol/web`
-- **Dependencies**: Installed from `requirements.txt` and `requirements.dev.txt`
+- **Dependencies**: Installed using UV from `requirements.txt` and `requirements.dev.txt` (or `pyproject.toml` for modern Python projects)
 
 ### Database Service
 
@@ -176,10 +176,15 @@ docker compose build frontend
 
 ### Backend Development
 
-1. Create virtual environment and install python dependencies. The shell script in `scripts/` will handle both.
+1. Create virtual environment and install python dependencies. The shell script in `scripts/` will handle both. The script uses UV for fast dependency management.
    ```bash
    cd scripts
    bash create_venv.sh
+   ```
+   
+   **Note**: If UV is not installed, the script will automatically install it. Alternatively, you can install UV manually:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```   
 2. Make changes to Python files in `app/backend/`
 3. Changes are automatically reflected (volume mounting)
