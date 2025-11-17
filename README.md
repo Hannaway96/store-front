@@ -171,3 +171,4 @@ See [LICENSE](LICENSE) file for details.
 - [Django Documentation](https://docs.djangoproject.com/)
 - [React Documentation](https://react.dev/)
 - [Docker Documentation](https://docs.docker.com/)
+
