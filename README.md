@@ -11,6 +11,7 @@ Store Front is a full-stack web application featuring a Django backend API and a
 ### Backend
 
 - **Python 3.13** - Programming language
+- **UV** - Fast Python package manager
 - **Django 5.1+** - Web framework
 - **Django REST Framework** - API framework
 - **PostgreSQL 16** - Database
@@ -171,4 +172,5 @@ See [LICENSE](LICENSE) file for details.
 - [Django Documentation](https://docs.djangoproject.com/)
 - [React Documentation](https://react.dev/)
 - [Docker Documentation](https://docs.docker.com/)
+
 
