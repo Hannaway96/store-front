@@ -11,7 +11,6 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from core.helpers import API_Client
-from rest_framework_simplejwt.tokens import RefreshToken
 
 
 def get_url(user_id):
@@ -81,7 +80,7 @@ class Profile_Actions_Authenticated(TestCase):
             first_name="Jane",
             last_name="Doe",
         )
-        
+
         self.profile = Profile.objects.create(
             user=self.user,
             display_name="John Doe",
@@ -93,11 +92,6 @@ class Profile_Actions_Authenticated(TestCase):
             bio="Test bio",
         )
         self.client.authorize(self.user)
-
-    def get_access_token(self, user):
-        """Helper function to get auth tokens for user"""
-        refresh = RefreshToken.for_user(user)
-        return str(refresh.access_token)
 
     def test_get_profile(self):
         """Test getting a profile"""

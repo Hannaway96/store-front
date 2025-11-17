@@ -48,6 +48,15 @@ class RegisterRequestSerializer(serializers.ModelSerializer):
             },  # Remove default validators including uniqueness
         }
 
+    def too_young(self, date) -> bool:
+        today = date.today()
+        age = (
+            today.year
+            - date.year
+            - ((today.month, today.day) < (date.month, date.day))
+        )
+        return age < 18
+
     def validate_email(self, value):
         """Validate email format and uniqueness"""
         try:
@@ -61,23 +70,15 @@ class RegisterRequestSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def validate_date_of_birth(self, value):
-        """Validate dob"""
-        today = date.today()
-        age = (
-            today.year
-            - value.year
-            - ((today.month, today.day) < (value.month, value.day))
-        )
-        if age < 18:
-            raise serializers.ValidationError(
-                "User must be 18 or older", code="dob_error"
-            )
-        return value
-
     def validate(self, attrs):
         if attrs["password"] != attrs["password_confirm"]:
             raise serializers.ValidationError("Passwords Provided don't match")
+        
+        if attrs["date_of_birth"] and self.too_young(attrs["date_of_birth"]):
+            raise serializers.ValidationError(
+                "User must be 18 or older", code="dob_error"
+            )
+
         return attrs
 
     def create(self, validated_data):

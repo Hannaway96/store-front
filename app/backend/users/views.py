@@ -2,8 +2,9 @@
 API Views for Users
 """
 
+import logging
 from core.models import Profile
-from core.permissions import isOwnerOrReadOnly, isOwner
+from core.permissions import UserIsOwner, UserIsOwnerOrReadOnly
 from core.serializers import ProfileSerializer, UserSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -62,10 +63,9 @@ class UserDetailViewSet(RetrieveUpdateAPIView):
     GET, PATCH, PUT users/{user_id}/
     """
 
-    lookup_field = "id"
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, isOwner]
+    permission_classes = [IsAuthenticated, UserIsOwner]
 
 
 class ProfileViewSet(RetrieveUpdateAPIView):
@@ -77,4 +77,4 @@ class ProfileViewSet(RetrieveUpdateAPIView):
     lookup_field = "user__id"
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
-    permission_classes = [IsAuthenticated, isOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated, UserIsOwnerOrReadOnly]
