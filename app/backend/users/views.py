@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 User = get_user_model()
 
 
-class UserDetailViewSet(RetrieveUpdateAPIView):
+class UserDetailViews(RetrieveUpdateAPIView):
     """
     View set for User
     GET, PATCH, PUT users/{user_id}/
@@ -23,7 +23,7 @@ class UserDetailViewSet(RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated, UserIsOwner]
 
 
-class ProfileViewSet(RetrieveUpdateAPIView):
+class ProfileViews(RetrieveUpdateAPIView):
     """
     View Set for Users Profile
     GET, PATCH, PUT users/{user_id}/profile/

@@ -4,9 +4,9 @@ URLs for Users API Routes
 
 from django.urls import path
 
-from .views import ProfileViewSet, UserDetailViewSet
+from .views import ProfileViews, UserDetailViews
 
 urlpatterns = [
-    path("<int:pk>/", UserDetailViewSet.as_view(), name="user-detail"),
-    path("<int:user__id>/profile/", ProfileViewSet.as_view(), name="profile"),
+    path("<int:pk>/", UserDetailViews.as_view(), name="user-detail"),
+    path("<int:user__id>/profile/", ProfileViews.as_view(), name="profile"),
 ]
