@@ -123,6 +123,8 @@ addopts = [
 
 [tool.coverage.run]
 source = ["."]
+data_file = ".coverage"
+parallel = false
 omit = [
     "*/migrations/*",
     "*/tests/*",
