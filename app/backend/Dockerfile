@@ -38,11 +38,10 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/* /root/.cache /tmp/*; \
     # Create user and directories
     useradd --create-home --shell /usr/sbin/nologin --uid 1000 django-user; \
-    mkdir -p /vol/web/media /vol/web/static /tmp /app/htmlcov; \
+    mkdir -p /vol/web/media /vol/web/static /tmp; \
     chown -R django-user:django-user /vol /app /opt/venv; \
     chmod -R 755 /vol; \
-    chmod 1777 /tmp; \
-    chmod 755 /app/htmlcov
+    chmod 1777 /tmp
 
 # Copy Source code
 COPY --chown=django-user:django-user . /app/

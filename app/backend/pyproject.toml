@@ -118,7 +118,7 @@ addopts = [
     "--cov=.",
     "--cov-config=.coveragerc",
     "--cov-report=term-missing",
-    "--cov-report=html:htmlcov",
+    "--cov-report=html:/tmp/htmlcov",
     "--cov-branch",
     "--no-cov-on-fail",
 ]
