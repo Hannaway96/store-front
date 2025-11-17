@@ -101,7 +101,8 @@ Once all containers are running, you can access:
   - Database connection waiting (ensures DB is ready)
   - Development server with hot reload
   - Static/media files stored in `/vol/web`
-- **Dependencies**: Installed using UV from `requirements.txt` and `requirements.dev.txt` (or `pyproject.toml` for modern Python projects)
+- **Dependencies**: Managed with UV using `pyproject.toml` and `uv.lock`
+- **Code Quality**: Ruff for linting and formatting
 
 ### Database Service
 
@@ -176,21 +177,37 @@ docker compose build frontend
 
 ### Backend Development
 
-1. Create virtual environment and install python dependencies. The shell script in `scripts/` will handle both. The script uses UV for fast dependency management.
+1. **Local Development Setup** (for IDE support and linting):
    ```bash
-   cd scripts
-   bash create_venv.sh
+   # From project root
+   ./app/backend/scripts/create_venv.sh
    ```
    
-   **Note**: If UV is not installed, the script will automatically install it. Alternatively, you can install UV manually:
+   This script will:
+   - Install UV if not already installed
+   - Create a virtual environment in `app/backend/.venv`
+   - Install all dependencies including dev tools (Ruff, pytest, etc.)
+   
+   **Note**: See [uv-workflow.md](uv-workflow.md) for detailed UV usage.
+
+2. **Code Quality Tools**:
    ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```   
-2. Make changes to Python files in `app/backend/`
-3. Changes are automatically reflected (volume mounting)
-4. For new dependencies, add them to `requirements.txt` or `requirements.dev.txt`
-5. Rebuild the container: `docker compose build api`
-6. Restart: `docker compose restart api`
+   ./app/backend/scripts/lint.sh      # Check for linting issues
+   ./app/backend/scripts/format.sh    # Format code with Ruff
+   ./app/backend/scripts/lint-fix.sh  # Auto-fix linting issues
+   ```
+
+3. Make changes to Python files in `app/backend/`
+4. Changes are automatically reflected (volume mounting)
+5. For new dependencies, use UV:
+   ```bash
+   cd app/backend
+   uv add package-name        # Production dependency
+   uv add --dev package-name  # Development dependency
+   uv lock                    # Update lock file
+   ```
+6. Rebuild the container: `docker compose build api`
+7. Restart: `docker compose restart api`
 
 ### Frontend Development
 
@@ -283,9 +300,11 @@ After setup is complete:
 
 ## Additional Resources
 
+- [UV Workflow Guide](uv-workflow.md) - Python package management with UV
 - [Docker Documentation](https://docs.docker.com/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
 - [Django Documentation](https://docs.djangoproject.com/)
 - [Django Rest Framework Documentation](https://www.django-rest-framework.org/)
+- [Ruff Documentation](https://docs.astral.sh/ruff/)
 - [Vite Documentation](https://vitejs.dev/)
 - [React Documentation](https://react.dev/)
