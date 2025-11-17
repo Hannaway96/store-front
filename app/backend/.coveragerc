@@ -1,0 +1,21 @@
+[run]
+source = .
+data_file = /tmp/.coverage
+parallel = False
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = False
+skip_empty = True
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+    @property
+    @abstractproperty
+

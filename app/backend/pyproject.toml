@@ -116,14 +116,16 @@ addopts = [
     "--tb=short",
     "--reuse-db",
     "--cov=.",
+    "--cov-config=.coveragerc",
     "--cov-report=term-missing",
-    "--cov-report=html",
+    "--cov-report=html:htmlcov",
     "--cov-branch",
+    "--no-cov-on-fail",
 ]
 
 [tool.coverage.run]
 source = ["."]
-data_file = ".coverage"
+data_file = "/tmp/.coverage"
 parallel = false
 omit = [
     "*/migrations/*",
