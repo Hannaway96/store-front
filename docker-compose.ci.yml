@@ -1,0 +1,58 @@
+services:
+  frontend:
+    image: ${DOCKERHUB_USER}/store-front-frontend:${IMAGE_TAG}
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - api
+
+  api:
+    image: ${DOCKERHUB_USER}/store-front-api:${IMAGE_TAG}
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    working_dir: /app
+    environment:
+      DEBUG: "1"
+      SECRET_KEY: dev-secret
+      ALLOWED_HOSTS: "*"
+      DB_NAME: store_db
+      DB_USER: store_user
+      DB_PASSWORD: storePassword123!
+      DB_HOST: db
+      DB_PORT: "5432"
+      REDIS_URL: redis://redis:6379/1
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: store_db
+      POSTGRES_USER: store_user
+      POSTGRES_PASSWORD: storePassword123!
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U store_user -d store_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  db-data:
