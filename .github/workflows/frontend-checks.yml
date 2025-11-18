@@ -13,6 +13,7 @@ jobs:
     uses: ./.github/workflows/build-container.yml
     with:
       service: Frontend
+      context: ./app/frontend
       dockerfile: ./app/frontend/Dockerfile
       image_name: store-front-frontend
       build_args: |

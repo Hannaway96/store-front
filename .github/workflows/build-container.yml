@@ -8,6 +8,10 @@ on:
         description: 'Service to build (api or frontend)'
         required: true
         type: string
+      context:
+        description: 'Build context directory'
+        required: true
+        type: string
       dockerfile:
         description: 'Path to Dockerfile'
         required: true
@@ -57,7 +61,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}

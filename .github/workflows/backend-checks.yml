@@ -14,6 +14,7 @@ jobs:
     uses: ./.github/workflows/build-container.yml
     with:
       service: API
+      context: ./app/backend
       dockerfile: ./app/backend/Dockerfile
       image_name: store-front-api
       build_args: |
