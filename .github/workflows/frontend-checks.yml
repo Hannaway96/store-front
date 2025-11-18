@@ -1,0 +1,23 @@
+---
+name: Frontend Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'app/frontend/**'
+      - '.github/workflows/frontend-checks.yml'
+
+jobs:
+  build-frontend:
+    uses: ./.github/workflows/build-container.yml
+    with:
+      service: Frontend
+      dockerfile: ./app/frontend/Dockerfile
+      image_name: store-front-frontend
+      build_args: |
+        USER_ID=1000
+        GROUP_ID=1000
+    secrets:
+      dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
+      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}

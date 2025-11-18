@@ -1,0 +1,67 @@
+---
+name: Build Container (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: 'Service to build (api or frontend)'
+        required: true
+        type: string
+      dockerfile:
+        description: 'Path to Dockerfile'
+        required: true
+        type: string
+      image_name:
+        description: 'Docker image name (without username prefix)'
+        required: true
+        type: string
+      build_args:
+        description: 'Build arguments as multi-line string'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      dockerhub_user:
+        required: true
+      dockerhub_token:
+        required: true
+
+jobs:
+  build:
+    name: Build ${{ inputs.service }} Container
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.dockerhub_user }}
+          password: ${{ secrets.dockerhub_token }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.dockerhub_user }}/${{ inputs.image_name }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ inputs.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ secrets.dockerhub_user }}/${{ inputs.image_name }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.dockerhub_user }}/${{ inputs.image_name }}:buildcache,mode=max
+          build-args: ${{ inputs.build_args }}
