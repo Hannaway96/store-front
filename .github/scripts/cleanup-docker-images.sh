@@ -89,6 +89,12 @@ cleanup_service() {
   done <<< "$DELETE_TAGS"
   
   echo "Deleted ${DELETED} ${SERVICE_PREFIX} tags, ${FAILED} failed"
+  
+  # Return error code if any deletions failed
+  if [ "$FAILED" -gt 0 ]; then
+    return 1
+  fi
+  return 0
 }
 
 # Cleanup build cache tags
@@ -148,13 +154,30 @@ cleanup_cache() {
   done <<< "$DELETE_CACHE"
   
   echo "Deleted ${DELETED} build cache tags, ${FAILED} failed"
+  
+  # Return error code if any deletions failed
+  if [ "$FAILED" -gt 0 ]; then
+    return 1
+  fi
+  return 0
 }
 
+# Track overall failures
+OVERALL_FAILED=0
+
 # Cleanup each service
-cleanup_service "api"
-cleanup_service "frontend"
-cleanup_cache
+cleanup_service "api" || OVERALL_FAILED=$((OVERALL_FAILED + 1))
+cleanup_service "frontend" || OVERALL_FAILED=$((OVERALL_FAILED + 1))
+cleanup_cache || OVERALL_FAILED=$((OVERALL_FAILED + 1))
 
 echo ""
-echo "Cleanup completed!"
+
+# Exit with error code if any cleanup operations failed
+if [ "$OVERALL_FAILED" -gt 0 ]; then
+  echo "✗ Cleanup completed with errors. Some operations failed."
+  exit 1
+fi
+
+echo "✓ Cleanup completed successfully"
+exit 0
 

@@ -100,3 +100,13 @@ echo "Cleanup summary:"
 echo "  Deleted: ${DELETED} tags"
 echo "  Failed: ${FAILED} tags"
 
+# Exit with error code if any deletions failed
+if [ "$FAILED" -gt 0 ]; then
+  echo ""
+  echo "✗ Cleanup completed with errors. Some tags could not be deleted."
+  exit 1
+fi
+
+echo "✓ Cleanup completed successfully"
+exit 0
+
