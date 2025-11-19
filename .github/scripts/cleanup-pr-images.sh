@@ -29,11 +29,30 @@ delete_tag() {
     "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/tags/${TAG}/")
   
   HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+  RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
+  
   if [ "$HTTP_CODE" = "204" ]; then
     echo "  ✓ Deleted ${TAG}"
     return 0
+  elif [ "$HTTP_CODE" = "401" ]; then
+    echo "  ✗ Authentication failed (HTTP 401)"
+    echo "  Error: Check that your DOCKERHUB_TOKEN has delete permissions"
+    if [ -n "$RESPONSE_BODY" ]; then
+      echo "  Details: ${RESPONSE_BODY}"
+    fi
+    return 1
+  elif [ "$HTTP_CODE" = "403" ]; then
+    echo "  ✗ Permission denied (HTTP 403)"
+    echo "  Error: Your token doesn't have delete permissions for this repository"
+    if [ -n "$RESPONSE_BODY" ]; then
+      echo "  Details: ${RESPONSE_BODY}"
+    fi
+    return 1
   else
     echo "  ✗ Failed to delete ${TAG} (HTTP ${HTTP_CODE})"
+    if [ -n "$RESPONSE_BODY" ]; then
+      echo "  Details: ${RESPONSE_BODY}"
+    fi
     return 1
   fi
 }
