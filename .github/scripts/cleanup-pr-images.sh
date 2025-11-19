@@ -20,6 +20,15 @@ fi
 
 echo "Cleaning up images for PR #${PR_NUM}..."
 
+# Check token format (Docker Hub access tokens start with 'dckr_pat_')
+if [[ ! "${DOCKERHUB_TOKEN}" =~ ^dckr_pat_ ]]; then
+  echo "⚠ Warning: Token doesn't appear to be a Docker Hub access token"
+  echo "  Expected format: dckr_pat_..."
+  echo "  Your token starts with: ${DOCKERHUB_TOKEN:0:10}..."
+  echo "  If this is a password, you need to create an access token instead"
+  echo ""
+fi
+
 # Verify authentication and repository access
 echo "Verifying Docker Hub authentication..."
 AUTH_TEST=$(curl -s -w "\n%{http_code}" -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
@@ -60,11 +69,22 @@ delete_tag() {
   local TAG=$1
   echo "Deleting tag: ${TAG}"
   
-  # Use verbose curl to see what's happening (but hide sensitive data)
+  # Try Bearer token authentication first (some Docker Hub endpoints require this)
   RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
-    -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
+    -H "Authorization: Bearer ${DOCKERHUB_TOKEN}" \
     -H "Accept: application/json" \
     "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/tags/${TAG}/" 2>&1)
+  
+  HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+  
+  # If Bearer token fails with 401, try basic auth as fallback
+  if [ "$HTTP_CODE" = "401" ]; then
+    echo "  Trying basic authentication..."
+    RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
+      -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
+      -H "Accept: application/json" \
+      "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/tags/${TAG}/" 2>&1)
+  fi
   
   HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
   RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
