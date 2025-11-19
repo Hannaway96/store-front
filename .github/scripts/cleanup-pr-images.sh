@@ -20,13 +20,51 @@ fi
 
 echo "Cleaning up images for PR #${PR_NUM}..."
 
+# Verify authentication and repository access
+echo "Verifying Docker Hub authentication..."
+AUTH_TEST=$(curl -s -w "\n%{http_code}" -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
+  "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/")
+AUTH_CODE=$(echo "$AUTH_TEST" | tail -n1)
+AUTH_BODY=$(echo "$AUTH_TEST" | sed '$d')
+
+if [ "$AUTH_CODE" != "200" ]; then
+  echo "✗ Authentication failed! Cannot access repository."
+  echo "  HTTP Code: ${AUTH_CODE}"
+  echo "  Response: ${AUTH_BODY}"
+  echo ""
+  echo "Troubleshooting:"
+  echo "  1. Verify DOCKERHUB_USER is correct: ${DOCKERHUB_USER}"
+  echo "  2. Verify DOCKERHUB_TOKEN is a valid access token (starts with 'dckr_pat_')"
+  echo "  3. Token must have 'Read', 'Write', and 'Delete' permissions"
+  echo "  4. Repository must exist: ${DOCKERHUB_USER}/${REPOSITORY}"
+  echo "  5. Token must be for the same account as DOCKERHUB_USER"
+  exit 1
+fi
+
+echo "✓ Authentication successful - can access repository"
+
+# Test if we can perform a write operation (check permissions)
+echo "Testing token permissions..."
+PERM_TEST=$(curl -s -w "\n%{http_code}" -X GET \
+  -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
+  "https://hub.docker.com/v2/users/${DOCKERHUB_USER}/")
+PERM_CODE=$(echo "$PERM_TEST" | tail -n1)
+
+if [ "$PERM_CODE" != "200" ]; then
+  echo "⚠ Warning: Token may not have sufficient permissions (HTTP ${PERM_CODE})"
+  echo "  Continuing anyway, but deletions may fail..."
+fi
+
 # Function to delete a tag
 delete_tag() {
   local TAG=$1
   echo "Deleting tag: ${TAG}"
+  
+  # Use verbose curl to see what's happening (but hide sensitive data)
   RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
     -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
-    "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/tags/${TAG}/")
+    -H "Accept: application/json" \
+    "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/tags/${TAG}/" 2>&1)
   
   HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
   RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
@@ -36,23 +74,22 @@ delete_tag() {
     return 0
   elif [ "$HTTP_CODE" = "401" ]; then
     echo "  ✗ Authentication failed (HTTP 401)"
-    echo "  Error: Check that your DOCKERHUB_TOKEN has delete permissions"
-    if [ -n "$RESPONSE_BODY" ]; then
-      echo "  Details: ${RESPONSE_BODY}"
-    fi
+    echo "  Full response: ${RESPONSE_BODY}"
+    echo ""
+    echo "  Common causes:"
+    echo "    - Token is not an access token (should start with 'dckr_pat_')"
+    echo "    - Token was created without 'Delete' permission"
+    echo "    - Token belongs to a different account than DOCKERHUB_USER"
+    echo "    - Token has expired or been revoked"
     return 1
   elif [ "$HTTP_CODE" = "403" ]; then
     echo "  ✗ Permission denied (HTTP 403)"
-    echo "  Error: Your token doesn't have delete permissions for this repository"
-    if [ -n "$RESPONSE_BODY" ]; then
-      echo "  Details: ${RESPONSE_BODY}"
-    fi
+    echo "  Full response: ${RESPONSE_BODY}"
+    echo "  Error: Token doesn't have delete permissions for this repository"
     return 1
   else
     echo "  ✗ Failed to delete ${TAG} (HTTP ${HTTP_CODE})"
-    if [ -n "$RESPONSE_BODY" ]; then
-      echo "  Details: ${RESPONSE_BODY}"
-    fi
+    echo "  Full response: ${RESPONSE_BODY}"
     return 1
   fi
 }
