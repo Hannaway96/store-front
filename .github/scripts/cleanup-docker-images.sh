@@ -68,9 +68,19 @@ cleanup_service() {
         "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/tags/${TAG}/")
       
       HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+      RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
+      
       if [ "$HTTP_CODE" = "204" ]; then
         DELETED=$((DELETED + 1))
         echo "  ✓ Deleted ${TAG}"
+      elif [ "$HTTP_CODE" = "401" ]; then
+        FAILED=$((FAILED + 1))
+        echo "  ✗ Authentication failed (HTTP 401)"
+        echo "  Error: Check that your DOCKERHUB_TOKEN has delete permissions"
+      elif [ "$HTTP_CODE" = "403" ]; then
+        FAILED=$((FAILED + 1))
+        echo "  ✗ Permission denied (HTTP 403)"
+        echo "  Error: Your token doesn't have delete permissions for this repository"
       else
         FAILED=$((FAILED + 1))
         echo "  ✗ Failed to delete ${TAG} (HTTP ${HTTP_CODE})"
@@ -125,8 +135,12 @@ cleanup_cache() {
         "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/tags/${CACHE_TAG}/")
       
       HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+      
       if [ "$HTTP_CODE" = "204" ]; then
         DELETED=$((DELETED + 1))
+      elif [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
+        FAILED=$((FAILED + 1))
+        echo "  ✗ Permission error (HTTP ${HTTP_CODE}) - check token has delete permissions"
       else
         FAILED=$((FAILED + 1))
       fi

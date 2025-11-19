@@ -47,8 +47,10 @@ Cleans up old Docker Hub images, keeping only the most recent N images per servi
 
 **Environment Variables:**
 - `DOCKERHUB_USER` (required): Docker Hub username
-- `DOCKERHUB_TOKEN` (required): Docker Hub access token
+- `DOCKERHUB_TOKEN` (required): Docker Hub access token with **delete permissions**
 - `REPOSITORY` (required): Repository name (e.g., `store-front`)
+
+**⚠️ Important:** Your Docker Hub access token must have delete permissions. Create a token at https://hub.docker.com/settings/security with "Delete" scope enabled.
 
 **Arguments:**
 - `keep_recent` (optional): Number of recent images to keep per service (default: 10)
@@ -79,8 +81,10 @@ Deletes all Docker Hub images for a specific pull request.
 
 **Environment Variables:**
 - `DOCKERHUB_USER` (required): Docker Hub username
-- `DOCKERHUB_TOKEN` (required): Docker Hub access token
+- `DOCKERHUB_TOKEN` (required): Docker Hub access token with **delete permissions**
 - `REPOSITORY` (required): Repository name (e.g., `store-front`)
+
+**⚠️ Important:** Your Docker Hub access token must have delete permissions. Create a token at https://hub.docker.com/settings/security with "Delete" scope enabled.
 
 **Examples:**
 ```bash
