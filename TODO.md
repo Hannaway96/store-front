@@ -11,8 +11,10 @@
         - [ ] Login
 - [x] Create basic user & profile actions
 - [x] UV Package Manager for Python packages??
-- [x] Add Git Automation
+- [x] Add Github Automation
     - [x] Add Test Coverage
+    - [x] Add Docker Image saving for multiple jobs
+    - [x] Docker Image clean up
 - [ ] Product Management
     - [ ] Product
     - [ ] Brand
