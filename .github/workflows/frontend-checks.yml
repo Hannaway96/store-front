@@ -9,7 +9,8 @@ on:
       - '.github/workflows/frontend-checks.yml'
 
 jobs:
-  build-frontend:
+  build:
+    name: Build Frontend Container
     uses: ./.github/workflows/build-container.yml
     with:
       service: frontend

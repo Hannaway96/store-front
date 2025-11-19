@@ -1,0 +1,46 @@
+---
+name: Cleanup Docker Images
+
+on:
+  schedule:
+    # Run weekly on Saturday at 2 AM UTC
+    - cron: '0 2 * * 6'
+  workflow_dispatch:
+    inputs:
+      keep_recent:
+        description: 'Number of recent images to keep per service'
+        required: false
+        type: number
+        default: 10
+      dry_run:
+        description: 'Dry run (show what would be deleted without deleting)'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  cleanup:
+    name: Cleanup Old Docker Images
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set cleanup parameters
+        id: params
+        run: |
+          KEEP_RECENT=${{ github.event.inputs.keep_recent || 10 }}
+          DRY_RUN=${{ github.event.inputs.dry_run || 'true' }}
+          echo "keep_recent=${KEEP_RECENT}" >> $GITHUB_OUTPUT
+          echo "dry_run=${DRY_RUN}" >> $GITHUB_OUTPUT
+
+      - name: Cleanup Docker Hub images
+        env:
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          REPOSITORY: store-front
+        run: |
+          bash .github/scripts/cleanup-docker-images.sh \
+            ${{ steps.params.outputs.keep_recent }} \
+            ${{ steps.params.outputs.dry_run }}
+

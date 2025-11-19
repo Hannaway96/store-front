@@ -1,0 +1,23 @@
+---
+name: Cleanup PR Images
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    name: Cleanup PR Images
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Delete PR images
+        env:
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          REPOSITORY: store-front
+        run: |
+          bash .github/scripts/cleanup-pr-images.sh ${{ github.event.pull_request.number }}
+

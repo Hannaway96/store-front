@@ -10,7 +10,8 @@ on:
       - '.github/workflows/backend-checks.yml'
 
 jobs:
-  build-api:
+  build:
+    name: Build Backend Container
     uses: ./.github/workflows/build-container.yml
     with:
       service: api
@@ -24,9 +25,9 @@ jobs:
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
 
   lint:
-    name: Lint API Code
+    name: Lint Backend for Errors
     runs-on: ubuntu-24.04
-    needs: [build-api]
+    needs: [build]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -40,13 +41,13 @@ jobs:
       - name: Lint
         env:
           DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
-          IMAGE_TAG: ${{ needs.build-api.outputs.image_tag }}
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
         run: docker compose -f docker-compose.ci.yml run api ruff check .
 
-  test-api:
-    name: Test API
+  test:
+    name: Test Backend
     runs-on: ubuntu-24.04
-    needs: [build-api]
+    needs: [build]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -60,5 +61,5 @@ jobs:
       - name: Test
         env:
           DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
-          IMAGE_TAG: ${{ needs.build-api.outputs.image_tag }}
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
         run: docker compose -f docker-compose.ci.yml run api pytest

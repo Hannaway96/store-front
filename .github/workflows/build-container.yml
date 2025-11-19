@@ -1,5 +1,5 @@
 ---
-name: Build Container (Reusable)
+name: Build Docker Container
 
 on:
   workflow_call:
@@ -57,26 +57,8 @@ jobs:
       - name: Set image tag
         id: tag
         run: |
-          SERVICE_PREFIX=$(echo "${{ inputs.service }}" | tr '[:upper:]' '[:lower:]')
-          if [[ "$GITHUB_REF" =~ ^refs/pull/ ]]; then
-            PR_NUM=$(echo "$GITHUB_REF" | sed 's|refs/pull/||' | sed 's|/merge||')
-            BRANCH_NAME="pr-${PR_NUM}"
-          else
-            BRANCH_NAME=${GITHUB_REF#refs/heads/}
-            BRANCH_NAME=${BRANCH_NAME//\//-}
-          fi
-          IMAGE_TAG="${SERVICE_PREFIX}-${BRANCH_NAME}-${GITHUB_SHA::7}"
+          IMAGE_TAG=$(bash .github/scripts/generate-image-tag.sh "${{ inputs.service }}" "$GITHUB_REF" "$GITHUB_SHA")
           echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ secrets.dockerhub_user }}/${{ inputs.repository_name }}
-          tags: |
-            type=raw,value=${{ steps.tag.outputs.tag }}
-            type=sha,prefix=${{ steps.tag.outputs.tag }}-
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -84,8 +66,7 @@ jobs:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ secrets.dockerhub_user }}/${{ inputs.repository_name }}:${{ steps.tag.outputs.tag }}
           cache-from: type=registry,ref=${{ secrets.dockerhub_user }}/${{ inputs.repository_name }}:${{ steps.tag.outputs.tag }}-buildcache
           cache-to: type=registry,ref=${{ secrets.dockerhub_user }}/${{ inputs.repository_name }}:${{ steps.tag.outputs.tag }}-buildcache,mode=max
           build-args: ${{ inputs.build_args }}
