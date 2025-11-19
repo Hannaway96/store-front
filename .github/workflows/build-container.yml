@@ -16,8 +16,8 @@ on:
         description: 'Path to Dockerfile'
         required: true
         type: string
-      image_name:
-        description: 'Docker image name (without username prefix)'
+      repository_name:
+        description: 'Docker repository name (without username prefix)'
         required: true
         type: string
       build_args:
@@ -57,6 +57,7 @@ jobs:
       - name: Set image tag
         id: tag
         run: |
+          SERVICE_PREFIX=$(echo "${{ inputs.service }}" | tr '[:upper:]' '[:lower:]')
           if [[ "$GITHUB_REF" =~ ^refs/pull/ ]]; then
             PR_NUM=$(echo "$GITHUB_REF" | sed 's|refs/pull/||' | sed 's|/merge||')
             BRANCH_NAME="pr-${PR_NUM}"
@@ -64,7 +65,7 @@ jobs:
             BRANCH_NAME=${GITHUB_REF#refs/heads/}
             BRANCH_NAME=${BRANCH_NAME//\//-}
           fi
-          IMAGE_TAG="${BRANCH_NAME}-${GITHUB_SHA::7}"
+          IMAGE_TAG="${SERVICE_PREFIX}-${BRANCH_NAME}-${GITHUB_SHA::7}"
           echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
 
@@ -72,10 +73,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.dockerhub_user }}/${{ inputs.image_name }}
+          images: ${{ secrets.dockerhub_user }}/${{ inputs.repository_name }}
           tags: |
             type=raw,value=${{ steps.tag.outputs.tag }}
-            type=sha,prefix=
+            type=sha,prefix=${{ steps.tag.outputs.tag }}-
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -85,6 +86,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ secrets.dockerhub_user }}/${{ inputs.image_name }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.dockerhub_user }}/${{ inputs.image_name }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ secrets.dockerhub_user }}/${{ inputs.repository_name }}:${{ steps.tag.outputs.tag }}-buildcache
+          cache-to: type=registry,ref=${{ secrets.dockerhub_user }}/${{ inputs.repository_name }}:${{ steps.tag.outputs.tag }}-buildcache,mode=max
           build-args: ${{ inputs.build_args }}

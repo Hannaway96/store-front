@@ -12,10 +12,10 @@ jobs:
   build-frontend:
     uses: ./.github/workflows/build-container.yml
     with:
-      service: Frontend
+      service: frontend
       context: ./app/frontend
       dockerfile: ./app/frontend/Dockerfile
-      image_name: store-front-frontend
+      repository_name: store-front
       build_args: |
         USER_ID=1000
         GROUP_ID=1000

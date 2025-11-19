@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: ${DOCKERHUB_USER}/store-front-frontend:${IMAGE_TAG}
+    image: ${DOCKERHUB_USER}/store-front:${IMAGE_TAG}
     working_dir: /app
     ports:
       - "5173:5173"
@@ -10,7 +10,7 @@ services:
       - api
 
   api:
-    image: ${DOCKERHUB_USER}/store-front-api:${IMAGE_TAG}
+    image: ${DOCKERHUB_USER}/store-front:${IMAGE_TAG}
     command: >
       sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"

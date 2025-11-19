@@ -13,10 +13,10 @@ jobs:
   build-api:
     uses: ./.github/workflows/build-container.yml
     with:
-      service: API
+      service: api
       context: ./app/backend
       dockerfile: ./app/backend/Dockerfile
-      image_name: store-front-api
+      repository_name: store-front
       build_args: |
         DEV=true
     secrets:
