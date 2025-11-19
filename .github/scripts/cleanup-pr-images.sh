@@ -19,14 +19,28 @@ API_BASE="https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}
 
 echo "Cleaning up images for PR #${PR_NUM}..."
 
-# Delete a tag using Docker Hub API v2
-# With 2FA enabled, use access token as password in basic auth
+# Get JWT token from Docker Hub login endpoint
+# With 2FA enabled, use access token as password
+echo "Authenticating with Docker Hub..."
+JWT_TOKEN=$(curl -s -H "Content-Type: application/json" -X POST \
+  -d "{\"username\": \"${DOCKERHUB_USER}\", \"password\": \"${DOCKERHUB_TOKEN}\"}" \
+  https://hub.docker.com/v2/users/login/ | jq -r .token)
+
+if [ -z "$JWT_TOKEN" ] || [ "$JWT_TOKEN" = "null" ]; then
+  echo "✗ Failed to authenticate with Docker Hub"
+  echo "  Check that DOCKERHUB_USER and DOCKERHUB_TOKEN are correct"
+  exit 1
+fi
+
+echo "✓ Authentication successful"
+
+# Delete a tag using JWT token
 delete_tag() {
   local tag=$1
   local response http_code
   
   response=$(curl -s -w "\n%{http_code}" -X DELETE \
-    -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
+    -H "Authorization: JWT ${JWT_TOKEN}" \
     -H "Accept: application/json" \
     "${API_BASE}/tags/${tag}/" 2>&1)
   
@@ -46,7 +60,7 @@ find_and_delete_tags() {
   local pattern=$1
   local tags deleted=0 failed=0
   
-  tags=$(curl -s -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
+  tags=$(curl -s -H "Authorization: JWT ${JWT_TOKEN}" \
     "${API_BASE}/tags/?page_size=100" \
     | jq -r ".results[] | select(.name | ${pattern}) | .name")
   
