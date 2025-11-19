@@ -19,8 +19,10 @@ API_BASE="https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}
 
 echo "Cleaning up images for PR #${PR_NUM}..."
 
-# Get JWT token from Docker Hub login endpoint
-# With 2FA enabled, use access token as password
+# Authenticate with Docker Hub API v2 to get JWT token
+# REQUIRED: All Docker Hub API operations require JWT token authentication
+# With 2FA enabled, use access token as password in login request
+# Pattern: Login -> Get JWT -> Use JWT in Authorization header for all API calls
 echo "Authenticating with Docker Hub..."
 JWT_TOKEN=$(curl -s -H "Content-Type: application/json" -X POST \
   -d "{\"username\": \"${DOCKERHUB_USER}\", \"password\": \"${DOCKERHUB_TOKEN}\"}" \
@@ -34,7 +36,7 @@ fi
 
 echo "✓ Authentication successful"
 
-# Delete a tag using JWT token
+# Delete a tag using JWT token (must authenticate first)
 delete_tag() {
   local tag=$1
   local response http_code
