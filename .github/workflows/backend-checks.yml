@@ -37,14 +37,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set image tag
-        run: |
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          echo "IMAGE_TAG=${BRANCH_NAME}-${GITHUB_SHA::7}" >> $GITHUB_ENV
-      
       - name: Lint
         env:
           DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+          IMAGE_TAG: ${{ needs.build-api.outputs.image_tag }}
         run: docker compose -f docker-compose.ci.yml run api ruff check .
 
   test-api:
@@ -61,12 +57,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set image tag
-        run: |
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          echo "IMAGE_TAG=${BRANCH_NAME}-${GITHUB_SHA::7}" >> $GITHUB_ENV
-
       - name: Test
         env:
           DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+          IMAGE_TAG: ${{ needs.build-api.outputs.image_tag }}
         run: docker compose -f docker-compose.ci.yml run api pytest

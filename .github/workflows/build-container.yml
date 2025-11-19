@@ -35,6 +35,8 @@ jobs:
   build:
     name: Build ${{ inputs.service }} Container
     runs-on: ubuntu-24.04
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -48,15 +50,28 @@ jobs:
           username: ${{ secrets.dockerhub_user }}
           password: ${{ secrets.dockerhub_token }}
 
+      - name: Set image tag
+        id: tag
+        run: |
+          if [[ "$GITHUB_REF" =~ ^refs/pull/ ]]; then
+            PR_NUM=$(echo "$GITHUB_REF" | sed 's|refs/pull/||' | sed 's|/merge||')
+            BRANCH_NAME="pr-${PR_NUM}"
+          else
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+            BRANCH_NAME=${BRANCH_NAME//\//-}
+          fi
+          IMAGE_TAG="${BRANCH_NAME}-${GITHUB_SHA::7}"
+          echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ secrets.dockerhub_user }}/${{ inputs.image_name }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha
+            type=raw,value=${{ steps.tag.outputs.tag }}
+            type=sha,prefix=
 
       - name: Build and push
         uses: docker/build-push-action@v5
