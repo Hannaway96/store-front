@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build Frontend Container
+    name: Build Container
     uses: ./.github/workflows/build-container.yml
     with:
       service: frontend
