@@ -4,9 +4,6 @@ name: Frontend Checks
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    paths:
-      - 'app/frontend/**'
-      - '.github/workflows/frontend-checks.yml'
 
 jobs:
   build:
