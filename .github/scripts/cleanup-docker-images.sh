@@ -3,181 +3,138 @@ set -euo pipefail
 
 # Cleanup old Docker Hub images
 # Usage: cleanup-docker-images.sh [keep_recent] [dry_run]
-#   keep_recent: Number of recent images to keep per service (default: 10)
-#   dry_run: "true" or "false" (default: "true")
 
 KEEP_RECENT=${1:-10}
 DRY_RUN=${2:-true}
 
-# Required environment variables
 : "${DOCKERHUB_USER:?DOCKERHUB_USER environment variable is required}"
 : "${DOCKERHUB_TOKEN:?DOCKERHUB_TOKEN environment variable is required}"
 : "${REPOSITORY:?REPOSITORY environment variable is required}"
 
-# Function to cleanup tags for a service prefix
-cleanup_service() {
-  local SERVICE_PREFIX=$1
-  echo "Cleaning up ${SERVICE_PREFIX} images..."
+API_BASE="https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}"
+
+# Delete a tag using Docker Hub API v2
+# With 2FA enabled, use access token as password in basic auth
+delete_tag() {
+  local tag=$1
+  local response http_code
   
-  # Get all tags for this service prefix
-  TAGS=$(curl -s -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
-    "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/tags/?page_size=100" \
-    | jq -r ".results[] | select(.name | startswith(\"${SERVICE_PREFIX}-\")) | .name" \
-    | sort -r)
+  response=$(curl -s -w "\n%{http_code}" -X DELETE \
+    -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
+    -H "Accept: application/json" \
+    "${API_BASE}/tags/${tag}/" 2>&1)
   
-  if [ -z "$TAGS" ]; then
-    echo "No ${SERVICE_PREFIX} tags found"
-    return
-  fi
+  http_code=$(echo "$response" | tail -n1)
   
-  # Count total tags
-  TAG_COUNT=$(echo "$TAGS" | wc -l)
-  echo "Found ${TAG_COUNT} ${SERVICE_PREFIX} tags"
-  
-  # Keep only the most recent KEEP_RECENT tags
-  KEEP_TAGS=$(echo "$TAGS" | head -n ${KEEP_RECENT})
-  DELETE_TAGS=$(echo "$TAGS" | tail -n +$((KEEP_RECENT + 1)))
-  
-  DELETE_COUNT=$(echo "$DELETE_TAGS" | grep -c . || echo "0")
-  
-  if [ "$DELETE_COUNT" -eq 0 ]; then
-    echo "No ${SERVICE_PREFIX} tags to delete (keeping ${TAG_COUNT} tags)"
-    return
-  fi
-  
-  echo "Keeping ${KEEP_RECENT} recent ${SERVICE_PREFIX} tags:"
-  echo "$KEEP_TAGS" | sed 's/^/  - /'
-  echo ""
-  echo "Would delete ${DELETE_COUNT} old ${SERVICE_PREFIX} tags:"
-  echo "$DELETE_TAGS" | sed 's/^/  - /'
-  echo ""
-  
-  if [ "$DRY_RUN" = "true" ]; then
-    echo "DRY RUN: Skipping deletion"
-    return
-  fi
-  
-  # Delete old tags
-  DELETED=0
-  FAILED=0
-  while IFS= read -r TAG; do
-    if [ -n "$TAG" ]; then
-      echo "Deleting ${SERVICE_PREFIX} tag: ${TAG}"
-      RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
-        -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
-        "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/tags/${TAG}/")
-      
-      HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-      RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
-      
-      if [ "$HTTP_CODE" = "204" ]; then
-        DELETED=$((DELETED + 1))
-        echo "  ✓ Deleted ${TAG}"
-      elif [ "$HTTP_CODE" = "401" ]; then
-        FAILED=$((FAILED + 1))
-        echo "  ✗ Authentication failed (HTTP 401)"
-        echo "  Error: Check that your DOCKERHUB_TOKEN has delete permissions"
-      elif [ "$HTTP_CODE" = "403" ]; then
-        FAILED=$((FAILED + 1))
-        echo "  ✗ Permission denied (HTTP 403)"
-        echo "  Error: Your token doesn't have delete permissions for this repository"
-      else
-        FAILED=$((FAILED + 1))
-        echo "  ✗ Failed to delete ${TAG} (HTTP ${HTTP_CODE})"
-      fi
-    fi
-  done <<< "$DELETE_TAGS"
-  
-  echo "Deleted ${DELETED} ${SERVICE_PREFIX} tags, ${FAILED} failed"
-  
-  # Return error code if any deletions failed
-  if [ "$FAILED" -gt 0 ]; then
+  if [ "$http_code" = "204" ]; then
+    echo "  ✓ Deleted ${tag}"
+    return 0
+  else
+    echo "  ✗ Failed to delete ${tag} (HTTP ${http_code})"
     return 1
   fi
-  return 0
+}
+
+# Cleanup tags for a service prefix
+cleanup_service() {
+  local prefix=$1
+  local tags keep_tags delete_tags deleted=0 failed=0
+  
+  echo "Cleaning up ${prefix} images..."
+  
+  tags=$(curl -s -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
+    "${API_BASE}/tags/?page_size=100" \
+    | jq -r ".results[] | select(.name | startswith(\"${prefix}-\")) | .name" \
+    | sort -r)
+  
+  if [ -z "$tags" ]; then
+    echo "No ${prefix} tags found"
+    return 0
+  fi
+  
+  keep_tags=$(echo "$tags" | head -n ${KEEP_RECENT})
+  delete_tags=$(echo "$tags" | tail -n +$((KEEP_RECENT + 1)))
+  
+  if [ -z "$delete_tags" ]; then
+    echo "No ${prefix} tags to delete (keeping $(echo "$tags" | wc -l) tags)"
+    return 0
+  fi
+  
+  echo "Keeping ${KEEP_RECENT} recent tags, deleting $(echo "$delete_tags" | wc -l) old tags"
+  
+  if [ "$DRY_RUN" = "true" ]; then
+    echo "DRY RUN: Would delete:"
+    echo "$delete_tags" | sed 's/^/  - /'
+    return 0
+  fi
+  
+  while IFS= read -r tag; do
+    [ -z "$tag" ] && continue
+    if delete_tag "$tag"; then
+      deleted=$((deleted + 1))
+    else
+      failed=$((failed + 1))
+    fi
+  done <<< "$delete_tags"
+  
+  echo "  Summary: ${deleted} deleted, ${failed} failed"
+  return $failed
 }
 
 # Cleanup build cache tags
 cleanup_cache() {
+  local cache_tags keep_cache delete_cache deleted=0 failed=0
+  
   echo "Cleaning up build cache tags..."
   
-  CACHE_TAGS=$(curl -s -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
-    "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/tags/?page_size=100" \
+  cache_tags=$(curl -s -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
+    "${API_BASE}/tags/?page_size=100" \
     | jq -r ".results[] | select(.name | endswith(\"-buildcache\")) | .name" \
     | sort -r)
   
-  if [ -z "$CACHE_TAGS" ]; then
+  if [ -z "$cache_tags" ]; then
     echo "No build cache tags found"
-    return
+    return 0
   fi
   
-  CACHE_COUNT=$(echo "$CACHE_TAGS" | wc -l)
-  echo "Found ${CACHE_COUNT} build cache tags"
+  keep_cache=$(echo "$cache_tags" | head -n ${KEEP_RECENT})
+  delete_cache=$(echo "$cache_tags" | tail -n +$((KEEP_RECENT + 1)))
   
-  # Keep only the most recent KEEP_RECENT cache tags
-  KEEP_CACHE=$(echo "$CACHE_TAGS" | head -n ${KEEP_RECENT})
-  DELETE_CACHE=$(echo "$CACHE_TAGS" | tail -n +$((KEEP_RECENT + 1)))
-  
-  DELETE_CACHE_COUNT=$(echo "$DELETE_CACHE" | grep -c . || echo "0")
-  
-  if [ "$DELETE_CACHE_COUNT" -eq 0 ]; then
+  if [ -z "$delete_cache" ]; then
     echo "No build cache tags to delete"
-    return
+    return 0
   fi
   
-  echo "Would delete ${DELETE_CACHE_COUNT} old build cache tags"
+  echo "Would delete $(echo "$delete_cache" | wc -l) old build cache tags"
   
   if [ "$DRY_RUN" = "true" ]; then
     echo "DRY RUN: Skipping cache deletion"
-    return
+    return 0
   fi
   
-  DELETED=0
-  FAILED=0
-  while IFS= read -r CACHE_TAG; do
-    if [ -n "$CACHE_TAG" ]; then
-      RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
-        -u "${DOCKERHUB_USER}:${DOCKERHUB_TOKEN}" \
-        "https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}/tags/${CACHE_TAG}/")
-      
-      HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-      
-      if [ "$HTTP_CODE" = "204" ]; then
-        DELETED=$((DELETED + 1))
-      elif [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
-        FAILED=$((FAILED + 1))
-        echo "  ✗ Permission error (HTTP ${HTTP_CODE}) - check token has delete permissions"
-      else
-        FAILED=$((FAILED + 1))
-      fi
+  while IFS= read -r tag; do
+    [ -z "$tag" ] && continue
+    if delete_tag "$tag"; then
+      deleted=$((deleted + 1))
+    else
+      failed=$((failed + 1))
     fi
-  done <<< "$DELETE_CACHE"
+  done <<< "$delete_cache"
   
-  echo "Deleted ${DELETED} build cache tags, ${FAILED} failed"
-  
-  # Return error code if any deletions failed
-  if [ "$FAILED" -gt 0 ]; then
-    return 1
-  fi
-  return 0
+  echo "  Summary: ${deleted} deleted, ${failed} failed"
+  return $failed
 }
 
-# Track overall failures
-OVERALL_FAILED=0
+# Run cleanup operations
+failed=0
+cleanup_service "api" || failed=$((failed + 1))
+cleanup_service "frontend" || failed=$((failed + 1))
+cleanup_cache || failed=$((failed + 1))
 
-# Cleanup each service
-cleanup_service "api" || OVERALL_FAILED=$((OVERALL_FAILED + 1))
-cleanup_service "frontend" || OVERALL_FAILED=$((OVERALL_FAILED + 1))
-cleanup_cache || OVERALL_FAILED=$((OVERALL_FAILED + 1))
-
-echo ""
-
-# Exit with error code if any cleanup operations failed
-if [ "$OVERALL_FAILED" -gt 0 ]; then
-  echo "✗ Cleanup completed with errors. Some operations failed."
+if [ $failed -gt 0 ]; then
+  echo "✗ Cleanup completed with errors"
   exit 1
 fi
 
 echo "✓ Cleanup completed successfully"
 exit 0
-
