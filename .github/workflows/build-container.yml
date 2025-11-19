@@ -25,6 +25,10 @@ on:
         required: false
         type: string
         default: ''
+    outputs:
+      image_tag:
+        description: 'The image tag that was built and pushed'
+        value: ${{ jobs.build.outputs.image_tag }}
     secrets:
       dockerhub_user:
         required: true
