@@ -1,0 +1,65 @@
+---
+name: Backend Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'app/backend/**'
+      - 'docker-compose.ci.yml'
+      - '.github/workflows/backend-checks.yml'
+
+jobs:
+  build:
+    name: Build Backend Container
+    uses: ./.github/workflows/build-container.yml
+    with:
+      service: api
+      context: ./app/backend
+      dockerfile: ./app/backend/Dockerfile
+      repository_name: store-front
+      build_args: |
+        DEV=true
+    secrets:
+      dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
+      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  lint:
+    name: Lint Backend for Errors
+    runs-on: ubuntu-24.04
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Lint
+        env:
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+        run: docker compose -f docker-compose.ci.yml run api ruff check .
+
+  test:
+    name: Test Backend
+    runs-on: ubuntu-24.04
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Test
+        env:
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+        run: docker compose -f docker-compose.ci.yml run api pytest

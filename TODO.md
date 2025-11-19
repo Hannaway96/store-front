@@ -5,11 +5,14 @@
 - [x] Add Test Framework
 - [x] Create authentication
     - [x] Use JWT Authentication
-    - [ ] Set Password Encoding when registering
+    - [ ] ~~Set Password Encoding when registering??~~ 
+    - [ ] Implement Passwordless
+        - [ ] Registration
+        - [ ] Login
 - [x] Create basic user & profile actions
 - [x] UV Package Manager for Python packages??
-- [ ] Add Git Automation
-    - [ ] Add Test Coverage
+- [x] Add Git Automation
+    - [x] Add Test Coverage
 - [ ] Product Management
     - [ ] Product
     - [ ] Brand
@@ -26,3 +29,7 @@
 ## Frontend
 - [ ] Testing Framework 
 - [ ] UI Framework?
+- [ ] State management
+    - [ ] useContext vs useState?
+    - [ ] User State
+    - [ ] Authentication State
