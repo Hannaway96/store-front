@@ -44,7 +44,9 @@ else
     PR_NUM=$(echo "$GITHUB_REF" | sed 's|refs/pull/||' | sed 's|/merge||')
     IMAGE_TAG="${SERVICE_PREFIX}-pr-${PR_NUM}-${SHORT_SHA}"
   else
-    IMAGE_TAG="${SERVICE_PREFIX}-${GITHUB_REF#refs/heads/}-${SHORT_SHA}"
+    BRANCH_NAME=${GITHUB_REF#refs/heads/}
+    BRANCH_NAME=${BRANCH_NAME//\//-}
+    IMAGE_TAG="${SERVICE_PREFIX}-${BRANCH_NAME}-${SHORT_SHA}"
   fi
 fi
   

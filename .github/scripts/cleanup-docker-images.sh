@@ -110,11 +110,13 @@ cleanup_service() {
   return $failed
 }
 
-# Cleanup build cache tags
+# Cleanup build cache tags (keep fewer than regular images)
 cleanup_cache() {
   local cache_tags keep_cache delete_cache deleted=0 failed=0
+  # Keep fewer build cache tags (3 instead of KEEP_RECENT) to reduce storage
+  local keep_cache_count=3
   
-  echo "Cleaning up build cache tags..."
+  echo "Cleaning up build cache tags (keeping ${keep_cache_count} most recent)..."
   
   cache_tags=$(
     curl -s "${TAGS_URL}" \
@@ -128,18 +130,19 @@ cleanup_cache() {
     return 0
   fi
   
-  keep_cache=$(echo "$cache_tags" | head -n ${KEEP_RECENT})
-  delete_cache=$(echo "$cache_tags" | tail -n +$((KEEP_RECENT + 1)))
+  keep_cache=$(echo "$cache_tags" | head -n ${keep_cache_count})
+  delete_cache=$(echo "$cache_tags" | tail -n +$((keep_cache_count + 1)))
   
   if [ -z "$delete_cache" ]; then
-    echo "No build cache tags to delete"
+    echo "No build cache tags to delete (keeping $(echo "$cache_tags" | wc -l) tags)"
     return 0
   fi
   
-  echo "Would delete $(echo "$delete_cache" | wc -l) old build cache tags"
+  echo "Keeping ${keep_cache_count} recent cache tags, deleting $(echo "$delete_cache" | wc -l) old cache tags"
   
   if [ "$DRY_RUN" = "true" ]; then
-    echo "DRY RUN: Skipping cache deletion"
+    echo "DRY RUN: Would delete:"
+    echo "$delete_cache" | sed 's/^/  - /'
     return 0
   fi
   
