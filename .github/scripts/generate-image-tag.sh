@@ -25,7 +25,7 @@ SERVICE_PREFIX=$(echo "$SERVICE" | tr '[:upper:]' '[:lower:]')
 IMAGE_TAG=""
 
 if [ "$IS_LATEST" = true ]; then
-  IMAGE_TAG="${SERVICE_PREFIX}-latest"
+  IMAGE_TAG="${SERVICE_PREFIX}_latest"
 else
   # Get current branch/ref if not provided
   if [ -z "$GITHUB_REF" ]; then
