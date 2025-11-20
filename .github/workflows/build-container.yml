@@ -72,8 +72,10 @@ jobs:
           file: ${{ inputs.dockerfile }}
           push: true
           load: false
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           tags: ${{ secrets.dockerhub_user }}/${{ inputs.repository_name }}:${{ steps.tag.outputs.tag }}
           cache-from: type=registry,ref=${{ secrets.dockerhub_user }}/${{ inputs.repository_name }}:${{ steps.tag.outputs.tag }}-buildcache
           cache-to: type=registry,ref=${{ secrets.dockerhub_user }}/${{ inputs.repository_name }}:${{ steps.tag.outputs.tag }}-buildcache,mode=min
           build-args: ${{ inputs.build_args }}
+          provenance: false
+          sbom: false
