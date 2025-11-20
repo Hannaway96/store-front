@@ -34,7 +34,7 @@ JWT_TOKEN=$(
     -H "Content-Type: application/json" \
     -d "{\"username\": \"${DOCKERHUB_USER}\", \"password\": \"${DOCKERHUB_TOKEN}\"}" \
     | jq -r .token
-  )
+)
 
 if [ -z "$JWT_TOKEN" ] || [ "$JWT_TOKEN" = "null" ]; then
   echo "✗ Failed to authenticate with Docker Hub"
