@@ -25,6 +25,11 @@ on:
         required: false
         type: string
         default: ''
+      is_latest:
+        description: 'Whether to build the latest image'
+        required: false
+        type: boolean
+        default: false
     outputs:
       image_tag:
         description: 'The image tag that was built and pushed'
@@ -57,7 +62,7 @@ jobs:
       - name: Set image tag
         id: tag
         run: |
-          IMAGE_TAG=$(bash .github/scripts/generate-image-tag.sh "${{ inputs.service }}" "$GITHUB_REF" "$GITHUB_SHA")
+          IMAGE_TAG=$(bash .github/scripts/generate-image-tag.sh "${{ inputs.service }}" "$GITHUB_REF" "$GITHUB_SHA" "${{ inputs.is_latest }}")
           echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
 
       - name: Build & Push

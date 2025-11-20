@@ -15,7 +15,11 @@ fi
 : "${DOCKERHUB_TOKEN:?DOCKERHUB_TOKEN environment variable is required}"
 : "${REPOSITORY:?REPOSITORY environment variable is required}"
 
-API_BASE="https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}"
+DOCKERHUB_URL="https://hub.docker.com/v2"
+LOGIN_URL="${DOCKERHUB_URL}/users/login/"
+REPO_URL="${DOCKERHUB_URL}/repositories/${DOCKERHUB_USER}/${REPOSITORY}"
+
+TAGS_URL="${REPO_URL}/tags/?page_size=100"
 
 echo "Cleaning up images for PR #${PR_NUM}..."
 
@@ -24,9 +28,13 @@ echo "Cleaning up images for PR #${PR_NUM}..."
 # With 2FA enabled, use access token as password in login request
 # Pattern: Login -> Get JWT -> Use JWT in Authorization header for all API calls
 echo "Authenticating with Docker Hub..."
-JWT_TOKEN=$(curl -s -H "Content-Type: application/json" -X POST \
-  -d "{\"username\": \"${DOCKERHUB_USER}\", \"password\": \"${DOCKERHUB_TOKEN}\"}" \
-  https://hub.docker.com/v2/users/login/ | jq -r .token)
+JWT_TOKEN=$(
+  curl -s "${LOGIN_URL}" \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d "{\"username\": \"${DOCKERHUB_USER}\", \"password\": \"${DOCKERHUB_TOKEN}\"}" \
+    | jq -r .token
+  )
 
 if [ -z "$JWT_TOKEN" ] || [ "$JWT_TOKEN" = "null" ]; then
   echo "✗ Failed to authenticate with Docker Hub"
@@ -41,10 +49,14 @@ delete_tag() {
   local tag=$1
   local response http_code
   
-  response=$(curl -s -w "\n%{http_code}" -X DELETE \
-    -H "Authorization: JWT ${JWT_TOKEN}" \
-    -H "Accept: application/json" \
-    "${API_BASE}/tags/${tag}/" 2>&1)
+  response=$(
+    curl -s "${REPO_URL}/tags/${tag}/" \
+      -X DELETE \
+      -H "Authorization: JWT ${JWT_TOKEN}" \
+      -H "Accept: application/json" \
+      -w "\n%{http_code}" \
+      2>&1
+  )
   
   http_code=$(echo "$response" | tail -n1)
   
@@ -62,9 +74,11 @@ find_and_delete_tags() {
   local pattern=$1
   local tags deleted=0 failed=0
   
-  tags=$(curl -s -H "Authorization: JWT ${JWT_TOKEN}" \
-    "${API_BASE}/tags/?page_size=100" \
-    | jq -r ".results[] | select(.name | ${pattern}) | .name")
+  tags=$(
+    curl -s "${TAGS_URL}" \
+      -H "Authorization: JWT ${JWT_TOKEN}" \
+      | jq -r ".results[] | select(.name | ${pattern}) | .name"
+  )
   
   if [ -z "$tags" ]; then
     return 0
@@ -85,11 +99,13 @@ find_and_delete_tags() {
 
 # Delete service tags (api-pr-123-* and frontend-pr-123-*)
 echo "Deleting service tags..."
-find_and_delete_tags "startswith(\"api-pr-${PR_NUM}-\") or startswith(\"frontend-pr-${PR_NUM}-\")"
+SERVICE_TAG_PATTERN="startswith(\"api-pr-${PR_NUM}-\") or startswith(\"frontend-pr-${PR_NUM}-\")"
+find_and_delete_tags "${SERVICE_TAG_PATTERN}"
 
 # Delete build cache tags (*-pr-123-buildcache)
 echo "Deleting build cache tags..."
-find_and_delete_tags "endswith(\"-pr-${PR_NUM}-buildcache\")"
+CACHE_TAG_PATTERN="endswith(\"-pr-${PR_NUM}-buildcache\")"
+find_and_delete_tags "${CACHE_TAG_PATTERN}"
 
 echo "✓ Cleanup completed"
 exit 0

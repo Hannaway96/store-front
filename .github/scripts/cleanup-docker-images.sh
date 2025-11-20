@@ -11,16 +11,23 @@ DRY_RUN=${2:-true}
 : "${DOCKERHUB_TOKEN:?DOCKERHUB_TOKEN environment variable is required}"
 : "${REPOSITORY:?REPOSITORY environment variable is required}"
 
-API_BASE="https://hub.docker.com/v2/repositories/${DOCKERHUB_USER}/${REPOSITORY}"
 
+DOCKERHUB_URL="https://hub.docker.com/v2"
+LOGIN_URL="${DOCKERHUB_URL}/users/login/"
+REPO_URL="${DOCKERHUB_URL}/repositories/${DOCKERHUB_USER}/${REPOSITORY}"
+TAGS_URL="${REPO_URL}/tags/?page_size=100"
 # Authenticate with Docker Hub API v2 to get JWT token
 # REQUIRED: All Docker Hub API operations require JWT token authentication
 # With 2FA enabled, use access token as password in login request
 # Pattern: Login -> Get JWT -> Use JWT in Authorization header for all API calls
 echo "Authenticating with Docker Hub..."
-JWT_TOKEN=$(curl -s -H "Content-Type: application/json" -X POST \
-  -d "{\"username\": \"${DOCKERHUB_USER}\", \"password\": \"${DOCKERHUB_TOKEN}\"}" \
-  https://hub.docker.com/v2/users/login/ | jq -r .token)
+JWT_TOKEN=$(
+  curl -s "${LOGIN_URL}" \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d "{\"username\": \"${DOCKERHUB_USER}\", \"password\": \"${DOCKERHUB_TOKEN}\"}" \
+    | jq -r .token
+  )
 
 if [ -z "$JWT_TOKEN" ] || [ "$JWT_TOKEN" = "null" ]; then
   echo "✗ Failed to authenticate with Docker Hub"
@@ -35,10 +42,14 @@ delete_tag() {
   local tag=$1
   local response http_code
   
-  response=$(curl -s -w "\n%{http_code}" -X DELETE \
-    -H "Authorization: JWT ${JWT_TOKEN}" \
-    -H "Accept: application/json" \
-    "${API_BASE}/tags/${tag}/" 2>&1)
+  response=$(
+    curl -s "${REPO_URL}/tags/${tag}/" \ 
+      -X DELETE \
+      -H "Authorization: JWT ${JWT_TOKEN}" \
+      -H "Accept: application/json" \
+      -w "\n%{http_code}" \
+      2>&1
+  )
   
   http_code=$(echo "$response" | tail -n1)
   
@@ -58,10 +69,12 @@ cleanup_service() {
   
   echo "Cleaning up ${prefix} images..."
   
-  tags=$(curl -s -H "Authorization: JWT ${JWT_TOKEN}" \
-    "${API_BASE}/tags/?page_size=100" \
-    | jq -r ".results[] | select(.name | startswith(\"${prefix}-\")) | .name" \
-    | sort -r)
+  tags=$(
+    curl -s "${TAGS_URL}" \
+      -H "Authorization: JWT ${JWT_TOKEN}" \
+      | jq -r ".results[] | select(.name | startswith(\"${prefix}-\")) | .name" \
+      | sort -r
+  )
   
   if [ -z "$tags" ]; then
     echo "No ${prefix} tags found"
@@ -103,10 +116,12 @@ cleanup_cache() {
   
   echo "Cleaning up build cache tags..."
   
-  cache_tags=$(curl -s -H "Authorization: JWT ${JWT_TOKEN}" \
-    "${API_BASE}/tags/?page_size=100" \
-    | jq -r ".results[] | select(.name | endswith(\"-buildcache\")) | .name" \
-    | sort -r)
+  cache_tags=$(
+    curl -s "${TAGS_URL}" \
+      -H "Authorization: JWT ${JWT_TOKEN}" \
+      | jq -r ".results[] | select(.name | endswith(\"-buildcache\")) | .name" \
+      | sort -r
+  )
   
   if [ -z "$cache_tags" ]; then
     echo "No build cache tags found"
