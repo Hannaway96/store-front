@@ -1,0 +1,39 @@
+---
+name: Main Branch Merge
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  latest-backend:
+    name: Build and Push Latest Backend
+    uses: ./.github/workflows/build-container.yml
+    with:
+      is_latest: true
+      service: api
+      context: ./app/backend
+      dockerfile: ./app/backend/Dockerfile
+      repository_name: store-front
+      build_args: |
+        DEV=true
+    secrets:
+      dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
+      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  latest-frontend:
+    name: Build and Push Latest Frontend
+    uses: ./.github/workflows/build-container.yml
+    with:
+      is_latest: true
+      service: frontend
+      context: ./app/frontend
+      dockerfile: ./app/frontend/Dockerfile
+      repository_name: store-front
+      build_args: |
+        USER_ID=1000
+        GROUP_ID=1000
+    secrets:
+      dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
+      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
