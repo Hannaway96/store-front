@@ -24,6 +24,8 @@
     - [ ] Basket
     - [ ] Order
     - [ ] Order Item
+- [ ] Payment Testing
+    - Stripe?
 - [ ] Set Up Redis Caching
 
 ---
