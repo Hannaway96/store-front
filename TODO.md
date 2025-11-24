@@ -24,5 +24,6 @@
 ---
 
 ## Frontend
+- [x] Ensure using ssh
 - [ ] Testing Framework 
 - [ ] UI Framework?
