@@ -18,6 +18,7 @@ jobs:
       context: ./app/frontend
       dockerfile: ./app/frontend/Dockerfile
       repository_name: store-front
+      target: development
       build_args: |
         NODE_ENV=development
     secrets:

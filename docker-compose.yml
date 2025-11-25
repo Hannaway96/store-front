@@ -2,6 +2,7 @@ services:
   frontend:
     build:
       context: ./app/frontend
+      target: development
       args:
         NODE_ENV: "development"
     working_dir: /app
@@ -18,6 +19,7 @@ services:
   api:
     build:
       context: ./app/backend
+      target: development
       args:
         DEV: "true"
     command: >

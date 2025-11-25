@@ -16,6 +16,7 @@ jobs:
       context: ./app/backend
       dockerfile: ./app/backend/Dockerfile
       repository_name: store-front
+      target: production
       build_args: |
         DEV=false
     secrets:
@@ -31,6 +32,7 @@ jobs:
       context: ./app/frontend
       dockerfile: ./app/frontend/Dockerfile
       repository_name: store-front
+      target: production
       build_args: |
         NODE_ENV=production
     secrets:

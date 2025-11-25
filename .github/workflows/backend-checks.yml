@@ -18,6 +18,7 @@ jobs:
       context: ./app/backend
       dockerfile: ./app/backend/Dockerfile
       repository_name: store-front
+      target: development
       build_args: |
         DEV=true
     secrets:
