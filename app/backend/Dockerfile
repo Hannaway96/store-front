@@ -5,7 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     COVERAGE_FILE=/tmp/.coverage
 
-ARG PRODUCTION=true
+ARG DEV=true
 
 WORKDIR /app
 
@@ -37,7 +37,7 @@ RUN set -eux; \
     mkdir -p /opt; \
     uv venv /opt/venv; \
     # Install Python dependencies using uv pip install
-    if [ "$PRODUCTION" = "false" ]; then \
+    if [ "$DEV" = "true" ]; then \
     uv pip install --python /opt/venv/bin/python -e ".[dev]"; \
     else \
     uv pip install --python /opt/venv/bin/python .; \

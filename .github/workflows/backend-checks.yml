@@ -19,7 +19,7 @@ jobs:
       dockerfile: ./app/backend/Dockerfile
       repository_name: store-front
       build_args: |
-        PRODUCTION=false
+        DEV=true
     secrets:
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
