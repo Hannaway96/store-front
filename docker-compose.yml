@@ -2,9 +2,9 @@ services:
   frontend:
     build:
       context: ./app/frontend
+      target: development
       args:
-        USER_ID: "${UID:-1000}"
-        GROUP_ID: "${GID:-1000}"
+        NODE_ENV: "development"
     working_dir: /app
     ports:
       - "5173:5173"
@@ -19,6 +19,7 @@ services:
   api:
     build:
       context: ./app/backend
+      target: development
       args:
         DEV: "true"
     command: >

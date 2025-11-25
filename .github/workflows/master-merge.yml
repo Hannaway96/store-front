@@ -16,8 +16,9 @@ jobs:
       context: ./app/backend
       dockerfile: ./app/backend/Dockerfile
       repository_name: store-front
+      target: production
       build_args: |
-        DEV=true
+        DEV=false
     secrets:
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -31,9 +32,9 @@ jobs:
       context: ./app/frontend
       dockerfile: ./app/frontend/Dockerfile
       repository_name: store-front
+      target: production
       build_args: |
-        USER_ID=1000
-        GROUP_ID=1000
+        NODE_ENV=production
     secrets:
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
