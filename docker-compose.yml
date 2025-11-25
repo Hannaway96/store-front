@@ -3,8 +3,7 @@ services:
     build:
       context: ./app/frontend
       args:
-        USER_ID: "${UID:-1000}"
-        GROUP_ID: "${GID:-1000}"
+        NODE_ENV: "development"
     working_dir: /app
     ports:
       - "5173:5173"
@@ -20,7 +19,7 @@ services:
     build:
       context: ./app/backend
       args:
-        DEV: "true"
+        PRODUCTION: "false"
     command: >
       sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"

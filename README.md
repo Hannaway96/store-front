@@ -194,7 +194,7 @@ See [LICENSE](LICENSE) file for details.
 ## Authors
 
 - Jack Hannaway
-- Daniel O Doherty
+- Daniel O'Doherty
 
 ## Additional Resources
 

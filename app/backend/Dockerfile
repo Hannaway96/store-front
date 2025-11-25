@@ -1,16 +1,26 @@
 FROM python:3.13-slim AS base
-LABEL maintainers="Jack Hannaway & Daniel O Doherty"
+LABEL maintainer="Jack Hannaway & Daniel O'Doherty"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     COVERAGE_FILE=/tmp/.coverage
 
-ARG DEV=true
+ARG PRODUCTION=true
 
 WORKDIR /app
 
-# Copy pyproject.toml and uv.lock for build cache efficiency and reproducibility
-COPY pyproject.toml uv.lock /app/
+# Create user and directories first
+RUN set -eux; \
+    useradd --create-home --shell /usr/sbin/nologin --uid 1000 django-user; \
+    mkdir -p /vol/web/media /vol/web/static; \
+    chmod -R 755 /vol; \
+    chmod 1777 /tmp
+
+# Ensure /app is owned by django-user (must run as root)
+RUN chown -R django-user:django-user /app
+
+# Copy dependency files first for better layer caching
+COPY --chown=django-user:django-user pyproject.toml uv.lock /app/
 
 # Install runtime libs, build deps, UV, and Python dependencies
 RUN set -eux; \
@@ -27,7 +37,7 @@ RUN set -eux; \
     mkdir -p /opt; \
     uv venv /opt/venv; \
     # Install Python dependencies using uv pip install
-    if [ "$DEV" = "true" ]; then \
+    if [ "$PRODUCTION" = "false" ]; then \
     uv pip install --python /opt/venv/bin/python -e ".[dev]"; \
     else \
     uv pip install --python /opt/venv/bin/python .; \
@@ -36,19 +46,13 @@ RUN set -eux; \
     apt-get purge -y --auto-remove \
     build-essential libpq-dev libjpeg-dev zlib1g-dev libpng-dev libtiff-dev libfreetype6-dev liblcms2-dev libwebp-dev libopenjp2-7-dev; \
     rm -rf /var/lib/apt/lists/* /root/.cache /tmp/*; \
-    # Create user and directories
-    useradd --create-home --shell /usr/sbin/nologin --uid 1000 django-user; \
-    mkdir -p /vol/web/media /vol/web/static /tmp; \
-    chown -R django-user:django-user /vol /app /opt/venv; \
-    chmod -R 755 /vol; \
-    chmod 1777 /tmp
+    # Ensure ownership of installed packages, venv, and volumes
+    chown -R django-user:django-user /opt/venv /app /vol
 
-# Copy Source code
+# Copy source code
 COPY --chown=django-user:django-user . /app/
 
-# Ensure /app is writable for coverage files
-RUN chmod -R u+w /app
-
+# Switch to non-root user
 USER django-user
 
 # Add venv to PATH
