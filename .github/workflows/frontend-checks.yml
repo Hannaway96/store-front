@@ -19,8 +19,7 @@ jobs:
       dockerfile: ./app/frontend/Dockerfile
       repository_name: store-front
       build_args: |
-        USER_ID=1000
-        GROUP_ID=1000
+        NODE_ENV=development
     secrets:
       dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
