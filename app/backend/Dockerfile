@@ -1,4 +1,4 @@
-FROM python:3.13-slim AS base
+FROM python:alpine
 LABEL maintainer="Jack Hannaway & Daniel O'Doherty"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

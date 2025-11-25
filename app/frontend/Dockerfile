@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:current-slim
 LABEL maintainer="Jack Hannaway & Daniel O'Doherty"
 
 ARG NODE_ENV=production
