@@ -1,11 +1,14 @@
 import ResponsiveAppBar from "./ResponsiveAppBar"
+import NavBar from "./NavBar"
 import Footer from "./footer"
+
 
 function Layout() {
 
     return (
         <>
-        <ResponsiveAppBar />
+        {/* <ResponsiveAppBar /> */}
+        <NavBar />
         <Footer />
         </>
     )
