@@ -2,9 +2,7 @@ services:
   frontend:
     build:
       context: ./app/frontend
-      target: development
-      args:
-        NODE_ENV: "development"
+      target: ${BUILD_TARGET:-development}
     working_dir: /app
     ports:
       - "5173:5173"
@@ -19,7 +17,7 @@ services:
   api:
     build:
       context: ./app/backend
-      target: development
+      target: ${BUILD_TARGET:-development}
       args:
         DEV: "true"
     command: >
