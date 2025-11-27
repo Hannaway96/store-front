@@ -11,14 +11,14 @@ WORKDIR /app
 
 # Create user and directories (must run as root)
 RUN set -eux; \
-    adduser -D -s /bin/false -u 1000 django-user; \
+    adduser -D -s /bin/false -u 1000 django; \
     mkdir -p /vol/web/media /vol/web/static; \
     chmod -R 755 /vol; \
     chmod 1777 /tmp; \
-    chown -R django-user:django-user /app
+    chown -R django:django /app
 
 # Copy dependency files first for better layer caching
-COPY --chown=django-user:django-user pyproject.toml uv.lock ./
+COPY --chown=django:django pyproject.toml uv.lock ./
 
 # Install all system dependencies (runtime + build dependencies) and UV
 ENV PATH="/root/.local/bin:$PATH"
@@ -51,33 +51,20 @@ RUN set -eux; \
     apk del .build-deps; \
     rm -rf /root/.cache /tmp/*
 
-# Copy source code
-COPY --chown=django-user:django-user . /app/
-
 #################### Production stage ####################
 FROM base AS production
-COPY --from=builder --chown=django-user:django-user /opt/venv /opt/venv
-COPY --chown=django-user:django-user . /app/
-
-# Remove build dependencies (not needed at runtime)
-RUN apk del .build-deps && \
-    chown -R django-user:django-user /app /vol /opt/venv
-
-# Switch to non-root user
-USER django-user
+COPY --from=builder --chown=django:django /opt/venv /opt/venv
+COPY --chown=django:django . /app/
+RUN apk del .build-deps && chown -R django:django /vol /opt/venv
+USER django
 EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 #################### Development stage ####################
 FROM base AS development
-COPY --from=install-dependencies --chown=django-user:django-user /opt/venv /opt/venv
-COPY --chown=django-user:django-user . /app/
-
-# Remove build dependencies (not needed at runtime)
-RUN apk del .build-deps && \
-    chown -R django-user:django-user /app /vol /opt/venv
-
-# Switch to non-root user
-USER django-user
+COPY --from=install-dependencies --chown=django:django /opt/venv /opt/venv
+COPY --chown=django:django . /app/
+RUN apk del .build-deps && chown -R django:django /vol /opt/venv
+USER django
 EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
