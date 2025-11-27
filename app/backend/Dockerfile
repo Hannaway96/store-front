@@ -19,18 +19,22 @@ RUN set -eux; \
 
 # Copy dependency files first for better layer caching
 COPY --chown=django-user:django-user pyproject.toml uv.lock ./
-# Install runtime libraries (needed for both build and runtime)
-RUN apk add --no-cache \
-    postgresql-libs jpeg zlib libpng tiff freetype lcms2 libwebp openjpeg
+
+# Install all system dependencies (runtime + build dependencies) and UV
+ENV PATH="/root/.local/bin:$PATH"
+RUN set -eux; \
+    apk add --no-cache \
+    # Runtime libraries
+    postgresql-libs jpeg zlib libpng tiff freetype lcms2 libwebp openjpeg \
+    # Build dependencies (will be removed in final stages)
+    --virtual .build-deps \
+    gcc musl-dev postgresql-dev jpeg-dev zlib-dev libpng-dev tiff-dev freetype-dev lcms2-dev libwebp-dev openjpeg-dev curl; \
+    curl -LsSf https://astral.sh/uv/install.sh | sh
 
 #################### install dependencies stage ####################
 FROM base AS install-dependencies
-# Install build dependencies, UV, and Python dependencies (with dev)
+# Install Python dependencies (with dev)
 RUN set -eux; \
-    apk add --no-cache --virtual .build-deps \
-    gcc musl-dev postgresql-dev jpeg-dev zlib-dev libpng-dev tiff-dev freetype-dev lcms2-dev libwebp-dev openjpeg-dev curl; \
-    curl -LsSf https://astral.sh/uv/install.sh | sh; \
-    export PATH="/root/.local/bin:$PATH"; \
     mkdir -p /opt; \
     uv venv /opt/venv; \
     uv pip install --python /opt/venv/bin/python -e ".[dev]"; \
@@ -39,12 +43,8 @@ RUN set -eux; \
 
 #################### Prod Build stage ####################
 FROM base AS builder
-# Install build dependencies, UV, and Python dependencies (production only)
+# Install Python dependencies (production only)
 RUN set -eux; \
-    apk add --no-cache --virtual .build-deps \
-    gcc musl-dev postgresql-dev jpeg-dev zlib-dev libpng-dev tiff-dev freetype-dev lcms2-dev libwebp-dev openjpeg-dev curl; \
-    curl -LsSf https://astral.sh/uv/install.sh | sh; \
-    export PATH="/root/.local/bin:$PATH"; \
     mkdir -p /opt; \
     uv venv /opt/venv; \
     uv pip install --python /opt/venv/bin/python .; \
@@ -59,7 +59,9 @@ FROM base AS production
 COPY --from=builder --chown=django-user:django-user /opt/venv /opt/venv
 COPY --chown=django-user:django-user . /app/
 
-RUN chown -R django-user:django-user /app /vol /opt/venv
+# Remove build dependencies (not needed at runtime)
+RUN apk del .build-deps && \
+    chown -R django-user:django-user /app /vol /opt/venv
 
 # Switch to non-root user
 USER django-user
@@ -71,8 +73,9 @@ FROM base AS development
 COPY --from=install-dependencies --chown=django-user:django-user /opt/venv /opt/venv
 COPY --chown=django-user:django-user . /app/
 
-# Ensure ownership
-RUN chown -R django-user:django-user /app /vol /opt/venv
+# Remove build dependencies (not needed at runtime)
+RUN apk del .build-deps && \
+    chown -R django-user:django-user /app /vol /opt/venv
 
 # Switch to non-root user
 USER django-user
