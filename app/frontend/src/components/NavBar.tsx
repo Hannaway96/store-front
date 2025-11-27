@@ -10,7 +10,7 @@ const NavBar = () => {
             <Container>
             <Toolbar>
                 <StorefrontIcon sx={{ mr: 2 }} />
-                <Typography variant="h5" sx={{flexGrow: 1, fontWeight: 'bold'}} >
+                <Typography variant="h5" sx={{flexGrow: 1, fontFamily: "'SUSE Mono', sans-serif", fontWeight: 'bold'}} >
                     Store Front
                 </Typography>
                 <Button color="inherit" href="#home">
