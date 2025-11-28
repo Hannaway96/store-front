@@ -31,8 +31,8 @@ RUN set -eux; \
     gcc musl-dev postgresql-dev jpeg-dev zlib-dev libpng-dev tiff-dev freetype-dev lcms2-dev libwebp-dev openjpeg-dev curl; \
     curl -LsSf https://astral.sh/uv/install.sh | sh
 
-#################### install dependencies stage ####################
-FROM base AS install-dependencies
+#################### Dev Setup stage ####################
+FROM base AS dev-set-up
 # Install Python dependencies (with dev)
 RUN set -eux; \
     mkdir -p /opt; \
@@ -41,8 +41,8 @@ RUN set -eux; \
     apk del .build-deps; \
     rm -rf /root/.cache /tmp/*
 
-#################### Prod Build stage ####################
-FROM base AS builder
+#################### Prod Setup stage ####################
+FROM base AS prod-set-up
 # Install Python dependencies (production only)
 RUN set -eux; \
     mkdir -p /opt; \
@@ -53,18 +53,18 @@ RUN set -eux; \
 
 #################### Production stage ####################
 FROM base AS production
-COPY --from=builder --chown=django:django /opt/venv /opt/venv
+COPY --from=prod-set-up --chown=django:django /opt/venv /opt/venv
 COPY --chown=django:django . /app/
-RUN apk del .build-deps && chown -R django:django /vol /opt/venv
+RUN apk del .build-deps && chown -R django:django /vol
 USER django
 EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 #################### Development stage ####################
 FROM base AS development
-COPY --from=install-dependencies --chown=django:django /opt/venv /opt/venv
+COPY --from=dev-set-up --chown=django:django /opt/venv /opt/venv
 COPY --chown=django:django . /app/
-RUN apk del .build-deps && chown -R django:django /vol /opt/venv
+RUN apk del .build-deps && chown -R django:django /vol
 USER django
 EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
