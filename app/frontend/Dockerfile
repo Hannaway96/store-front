@@ -1,6 +1,8 @@
 #################### Base Stage ####################
 FROM node:alpine AS base
 LABEL maintainer="Jack Hannaway & Daniel O'Doherty"
+LABEL description="Base image for the frontend service of the Store Front project"
+
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false \
     NPM_CONFIG_FUND=false \
     NPM_CONFIG_AUDIT=false
@@ -18,12 +20,11 @@ FROM base AS production
 RUN set -eux; \
     npm ci && \
     npm cache clean --force;
-
 COPY --chown=node:node . /app/
 
 ENV NODE_ENV=production
 RUN set -eux; \
-    npm ci --omit=dev && \
+    npm run build && \
     npm cache clean --force;
 EXPOSE 5173
 CMD ["npm", "run", "serve"]

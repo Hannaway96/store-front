@@ -1,7 +1,9 @@
 #################### Base Stage ####################
 FROM python:alpine AS base
 LABEL maintainer="Jack Hannaway & Daniel O'Doherty"
+LABEL description="Base image for the backend service of the Store Front project"
 
+# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     COVERAGE_FILE=/tmp/.coverage \
