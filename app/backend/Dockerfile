@@ -5,7 +5,8 @@ LABEL maintainer="Jack Hannaway & Daniel O'Doherty"
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     COVERAGE_FILE=/tmp/.coverage \
-    PATH="/opt/venv/bin:$PATH"
+    PATH="/root/.local/bin:/opt/venv/bin:$PATH" \
+    VIRTUAL_ENV="/opt/venv"
 
 WORKDIR /app
 
@@ -14,14 +15,12 @@ RUN set -eux; \
     adduser -D -s /bin/false -u 1000 django; \
     mkdir -p /vol/web/media /vol/web/static; \
     chmod -R 755 /vol; \
-    chmod 1777 /tmp; \
-    chown -R django:django /app
+    chmod 1777 /tmp;
 
 # Copy dependency files first for better layer caching
 COPY --chown=django:django pyproject.toml uv.lock ./
 
 # Install all system dependencies (runtime + build dependencies) and UV
-ENV PATH="/root/.local/bin:$PATH"
 RUN set -eux; \
     apk add --no-cache \
     # Runtime libraries
@@ -29,42 +28,32 @@ RUN set -eux; \
     # Build dependencies (will be removed in final stages)
     --virtual .build-deps \
     gcc musl-dev postgresql-dev jpeg-dev zlib-dev libpng-dev tiff-dev freetype-dev lcms2-dev libwebp-dev openjpeg-dev curl; \
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-
-#################### Dev Setup stage ####################
-FROM base AS dev-set-up
-# Install Python dependencies (with dev)
-RUN set -eux; \
+    curl -LsSf https://astral.sh/uv/install.sh | sh && \
     mkdir -p /opt; \
-    uv venv /opt/venv; \
-    uv pip install --python /opt/venv/bin/python -e ".[dev]"; \
-    apk del .build-deps; \
-    rm -rf /root/.cache /tmp/*
-
-#################### Prod Setup stage ####################
-FROM base AS prod-set-up
-# Install Python dependencies (production only)
-RUN set -eux; \
-    mkdir -p /opt; \
-    uv venv /opt/venv; \
-    uv pip install --python /opt/venv/bin/python .; \
-    apk del .build-deps; \
-    rm -rf /root/.cache /tmp/*
+    uv venv /opt/venv;
 
 #################### Production stage ####################
 FROM base AS production
-COPY --from=prod-set-up --chown=django:django /opt/venv /opt/venv
+RUN set -eux; \
+    uv pip install .; \
+    apk del .build-deps; \
+    rm -rf /root/.cache /tmp/*; \
+    chown -R django:django /vol /opt/venv
+
 COPY --chown=django:django . /app/
-RUN apk del .build-deps && chown -R django:django /vol
 USER django
 EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 #################### Development stage ####################
 FROM base AS development
-COPY --from=dev-set-up --chown=django:django /opt/venv /opt/venv
+RUN set -eux; \
+    uv pip install -e ".[dev]"; \
+    apk del .build-deps; \
+    rm -rf /root/.cache /tmp/*; \
+    chown -R django:django /vol /opt/venv
+
 COPY --chown=django:django . /app/
-RUN apk del .build-deps && chown -R django:django /vol
 USER django
 EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
