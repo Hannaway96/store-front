@@ -20,18 +20,20 @@ RUN set -eux; \
     npm cache clean --force;
 
 COPY --chown=node:node . /app/
-RUN npm run build
 
+ENV NODE_ENV=production
 RUN set -eux; \
     npm ci --omit=dev && \
-    npm cache clean --force;    chown -R node:node /app
+    npm cache clean --force;
 EXPOSE 5173
 CMD ["npm", "run", "serve"]
 
 #################### Development stage ####################
 FROM base AS development
 ENV NODE_ENV=development
-RUN npm ci && npm cache clean --force
+RUN set -eux; \
+    npm ci && \
+    npm cache clean --force;
 COPY --chown=node:node . /app/
 EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host"]
