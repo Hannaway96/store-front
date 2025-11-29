@@ -15,7 +15,8 @@ RUN set -eux; \
     adduser -D -s /bin/false -u 1000 django; \
     mkdir -p /vol/web/media /vol/web/static; \
     chmod -R 755 /vol; \
-    chmod 1777 /tmp;
+    chmod 1777 /tmp; \
+    chown -R django:django /app;
 
 # Copy dependency files first for better layer caching
 COPY --chown=django:django pyproject.toml uv.lock ./
