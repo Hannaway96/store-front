@@ -79,11 +79,17 @@ class Category(models.Model):
 
 class Product(models.Model):
     """Product Model"""
+    brand = models.ForeignKey(Brand, related_name="products", on_delete=models.CASCADE)
+    categories = models.ManyToManyField(Category, related_name="products")
 
     sku = models.CharField(blank=False, null=False)
     title = models.CharField(blank=False, null=False)
     price = models.DecimalField(decimal_places=2, max_digits=6) #9999.99
-    in_stock = models.IntegerField(null=False)
+    quantity = models.IntegerField(null=False)
 
     def __str__(self):
         return f"{self.sku}: {self.title}"
+
+    def in_stock(self):
+        """check if item is in stock"""
+        return self.quantity > 0
