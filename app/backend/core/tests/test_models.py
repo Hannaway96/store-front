@@ -85,3 +85,9 @@ class Product_Model(TestCase):
 
         self.assertEqual(all_products.count(), 1)
         self.assertEqual(product, first_product)
+
+class Brand_Model(TestCase):
+    """Test the Brand Model"""
+
+class Category_Model(TestCase):
+    """Test the Category Model"""
