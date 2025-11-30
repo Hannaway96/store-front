@@ -65,11 +65,17 @@ class Profile(models.Model):
 
 class Brand(models.Model):
     """Product Brand Model"""
-    name=models.CharField(blank=False)
+    name = models.CharField(blank=False)
+
+    def __str__(self):
+        return f"{self.name}"
 
 class Category(models.Model):
     """Product Category Model"""
     name = models.CharField(blank=False)
+
+    def __str__(self):
+        return f"{self.name}"
 
 class Product(models.Model):
     """Product Model"""
