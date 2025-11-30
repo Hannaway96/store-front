@@ -58,7 +58,9 @@ class RegisterRequestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Enter a valid email address") from None
 
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with this email already exists", code="user_exists")
+            raise serializers.ValidationError(
+                "A user with this email already exists", code="user_exists"
+            )
         return value
 
     def validate(self, attrs):

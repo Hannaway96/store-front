@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "core",
     "authentication.apps.AuthenticationConfig",  # Custom Authentication flow
     "users",
+    "products",
 ]
 
 MIDDLEWARE = [
