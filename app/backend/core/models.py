@@ -66,3 +66,12 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"({self.user.email}): {self.display_name}"
+
+# class Brand(models.Model):
+#     pass
+
+# class Category(models.Model):
+#     pass
+
+# class Product(models.Model):
+#     pass
