@@ -8,12 +8,14 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.test import TestCase
 
-from core.models import Product, Profile, Brand
+from core.models import Brand, Category, Product, Profile
 
 
 def create_user(email="user@example.com", password="testpass123"):
     """Create and return a new dummy user"""
-    return get_user_model().objects.create_user(email=email, password=password, date_of_birth=date(1990, 1, 1))
+    return get_user_model().objects.create_user(
+        email=email, password=password, date_of_birth=date(1990, 1, 1)
+    )
 
 
 class User_Model(TestCase):
@@ -67,22 +69,23 @@ class Profile_Model(TestCase):
                 bio="Test bio",
             )
 
+
 class Product_Model(TestCase):
     """Test Product Model"""
 
     def test_create(self):
         """Test a successful product creation"""
         apple = Brand.objects.create(name="Apple")
+        apple.save()
+
         product = Product.objects.create(
             brand=apple,
             sku="aplmbprom5",
             title="MacBook Pro M5",
             price="1.50",
-            quantity=5
+            quantity=5,
         )
-
-        apple.refresh_from_db()
-        product.refresh_from_db()
+        product.save()
 
         all_products = Product.objects.all()
         first_product = all_products.first()
@@ -91,8 +94,64 @@ class Product_Model(TestCase):
         self.assertEqual(product, first_product)
         self.assertEqual(product.brand, apple)
 
+    def test_create_fail_no_brand(self):
+        """Test creating a product without a brand, fails"""
+        with self.assertRaises(IntegrityError):
+            Product.objects.create(sku="pr", title="Item 1", price="1.50", quantity=2)
+
+    def test_create_fail_no_sku(self):
+        """Test creating a product without a sku, fails"""
+        with self.assertRaises(IntegrityError):
+            Product.objects.create(
+                brand=Brand.objects.create(name="Brand"),
+                sku="",
+                title="Item 1",
+                price="1.00",
+                quantity=1,
+            )
+
+    def test_create_fail_no_title(self):
+        """Test creatiung a product without a title, fails"""
+        with self.assertRaises(IntegrityError):
+            Product.objects.create(
+                brand=Brand.objects.create(name="Apple"), sku="sku", price="1.00", quantity=1
+            )
+
+
 class Brand_Model(TestCase):
     """Test the Brand Model"""
 
+    def test_create(self):
+        """Test creating a Brand successfully"""
+        apple = Brand.objects.create(name="Apple")
+        apple.save()
+
+        brands = Brand.objects.all()
+        self.assertEqual(brands.count(), 1)
+        self.assertEqual(brands.first(), apple)
+
+    def test_create_fails_no_name(self):
+        """Test creating a Brand with no name, fails"""
+
+        with self.assertRaises(IntegrityError):
+            Brand.objects.create(name="")
+
+
 class Category_Model(TestCase):
     """Test the Category Model"""
+
+    def test_create(self):
+        """Test creating a Category successfully"""
+
+        category = Category.objects.create(name="Laptops")
+        category.save()
+
+        categories = Category.objects.all()
+        self.assertEqual(categories.count(), 1)
+        self.assertEqual(categories.first(), category)
+
+    def test_create_fails_no_name(self):
+        """Test creating a Category with no name, fails"""
+
+        with self.assertRaises(IntegrityError):
+            Category.objects.create(name="")

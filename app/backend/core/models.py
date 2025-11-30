@@ -3,7 +3,24 @@ Core Application Models
 """
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.db import models
+from django.db.models import (
+    CASCADE,
+    BooleanField,
+    CharField,
+    CheckConstraint,
+    DateField,
+    DateTimeField,
+    DecimalField,
+    EmailField,
+    ForeignKey,
+    ImageField,
+    IntegerField,
+    ManyToManyField,
+    Model,
+    OneToOneField,
+    Q,
+    TextField,
+)
 
 
 class UserManager(BaseUserManager):
@@ -31,15 +48,15 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     """User in the System"""
 
-    email = models.EmailField(max_length=255, unique=True)
-    first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
-    date_of_birth = models.DateField()
+    email = EmailField(max_length=255, unique=True)
+    first_name = CharField(max_length=255)
+    last_name = CharField(max_length=255)
+    date_of_birth = DateField()
 
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    is_active = BooleanField(default=True)
+    is_staff = BooleanField(default=False)
+    created_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
 
     objects = UserManager()
     USERNAME_FIELD: str = "email"
@@ -48,44 +65,68 @@ class User(AbstractBaseUser, PermissionsMixin):
         return f"({self.email}): {self.first_name} {self.last_name}"
 
 
-class Profile(models.Model):
+class Profile(Model):
     """User's Profile - Public Information"""
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    display_name = models.CharField(max_length=100, blank=True)
-    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
-    bio = models.TextField(max_length=500, blank=True)
+    user = OneToOneField(User, on_delete=CASCADE, related_name="profile")
+    display_name = CharField(max_length=100, blank=True)
+    avatar = ImageField(upload_to="avatars/", blank=True, null=True)
+    bio = TextField(max_length=500, blank=True)
 
-    location = models.CharField(max_length=100, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    location = CharField(max_length=100, blank=True)
+    created_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"({self.user.email}): {self.display_name}"
 
-class Brand(models.Model):
+
+class Brand(Model):
     """Product Brand Model"""
-    name = models.CharField(blank=False)
+
+    name = CharField(max_length=100, unique=True, null=False, blank=False)
+    created_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [CheckConstraint(check=~Q(name=""), name="brand_name_not_empty")]
 
     def __str__(self):
         return f"{self.name}"
 
-class Category(models.Model):
+
+class Category(Model):
     """Product Category Model"""
-    name = models.CharField(blank=False)
+
+    name = CharField(max_length=100, unique=True, null=False, blank=False)
+    created_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [CheckConstraint(check=~Q(name=""), name="category_name_not_empty")]
 
     def __str__(self):
         return f"{self.name}"
 
-class Product(models.Model):
-    """Product Model"""
-    brand = models.ForeignKey(Brand, related_name="products", on_delete=models.CASCADE)
-    categories = models.ManyToManyField(Category, related_name="products")
 
-    sku = models.CharField(blank=False, null=False)
-    title = models.CharField(blank=False, null=False)
-    price = models.DecimalField(decimal_places=2, max_digits=6) #9999.99
-    quantity = models.IntegerField(null=False)
+class Product(Model):
+    """Product Model"""
+
+    brand = ForeignKey(Brand, related_name="products", on_delete=CASCADE)
+    categories = ManyToManyField(Category, related_name="products")
+
+    sku = CharField(max_length=50, unique=True, blank=False, null=False)
+    title = CharField(blank=False, null=False)
+    price = DecimalField(decimal_places=2, max_digits=6)  # 9999.99
+    quantity = IntegerField(null=False, default=0)
+    created_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            CheckConstraint(check=~Q(sku=""), name="product_sku_not_empty"),
+            CheckConstraint(check=~Q(title=""), name="product_title_not_empty"),
+        ]
 
     def __str__(self):
         return f"{self.sku}: {self.title}"
