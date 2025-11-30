@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.test import TestCase
 
-from core.models import Profile
+from core.models import Product, Profile
 
 
 def create_user(email="user@example.com", password="testpass123"):
@@ -66,3 +66,22 @@ class Profile_Model(TestCase):
                 display_name="Test User",
                 bio="Test bio",
             )
+
+class Product_Model(TestCase):
+    """Test Product Model"""
+
+    def test_create(self):
+        """Test a successful product creation"""
+        product = Product.objects.create(
+            sku="aplmbprom5",
+            title="MacBook Pro M5",
+            price="1.50",
+            in_stock=5
+        )
+        product.refresh_from_db()
+
+        all_products = Product.objects.all()
+        first_product = all_products.first()
+
+        self.assertEqual(all_products.count(), 1)
+        self.assertEqual(product, first_product)

@@ -2,11 +2,7 @@
 Core Application Models
 """
 
-from django.contrib.auth.models import (
-    AbstractBaseUser,
-    BaseUserManager,
-    PermissionsMixin,
-)
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
 
@@ -73,5 +69,13 @@ class Profile(models.Model):
 # class Category(models.Model):
 #     pass
 
-# class Product(models.Model):
-#     pass
+class Product(models.Model):
+    """Product Model"""
+
+    sku = models.CharField(blank=False, null=False)
+    title = models.CharField(blank=False, null=False)
+    price = models.DecimalField(decimal_places=2, max_digits=6) #9999.99
+    in_stock = models.IntegerField(null=False)
+
+    def __str__(self):
+        return f"{self.sku}: {self.title}"
